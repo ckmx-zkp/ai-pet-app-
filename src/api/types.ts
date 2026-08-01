@@ -67,3 +67,30 @@ export interface PeripheralState {
   extra: Record<string, unknown>
   updated_at: string
 }
+
+/** 用户可管理的设备记忆（GET /devices/{id}/memories） */
+export interface MemoryItem {
+  id: number
+  device_id: number
+  title: string | null
+  content: string
+  status: 'candidate' | 'active' | 'rejected' | 'archived' | string
+  source: string
+  tags: string[]
+  created_at: string
+  updated_at: string
+}
+
+export interface MemoryPayload {
+  title?: string | null
+  content: string
+  tags: string[]
+}
+
+/** 用户侧离线分析结果（GET /devices/{id}/analyses） */
+export interface AnalysisResult {
+  id: number
+  kind: string
+  payload: Record<string, unknown>
+  created_at: string
+}

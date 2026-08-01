@@ -57,6 +57,18 @@ flowchart LR
 - 首次加载 20 条，可继续加载下一页；无当前设备时引导用户先绑定或在首页选择设备。
 - 删除以一天为最小确认单位，调用 `DELETE /devices/{id}/messages?from=<ISO>&to=<ISO>`；后端要求至少提供一个时间边界并写审计，前端不得发无条件删除请求。
 
+### 记忆交互（C2）
+
+- 记忆页按当前选中设备调用 `GET /devices/{id}/memories?q&status&limit&offset`；支持关键词和状态筛选，列表为空时显示可恢复空态。
+- 手动新建调用 `POST /devices/{id}/memories`，请求包含可选 `title`、必填 `content` 及最多 20 个 `tags`；新建的记录为 `manual/active`。
+- `candidate` 状态仅可调用 `POST /memories/{mid}/approve` 或 `/reject` 审核；用户删除调用 `DELETE /memories/{mid}`，后端归档并保留审计。
+
+### 日运/小记交互（D2）
+
+- 日运/小记页调用 `GET /devices/{id}/analyses?kind=daily_summary&limit&offset`，只读展示后端 worker 写入的结果。
+- `daily_summary.payload` 的常用字段为 `summary`、`topics`、`user_mood`、`follow_up`；页面兼容字段缺失和 `{ empty: true }`，显示等待下一次服务端小结的空态。
+- 当前不调用 `/export`：该接口仍返回 501，待后端提供下载响应、文件格式和保留策略契约后再实现 D3。
+
 ### 外设状态交互（D1）
 
 - 外设状态页使用当前选中设备的 `device_id` 调用 `GET /devices/{id}/peripheral`，仅消费用户 API，不直连设备或内部 MCP。
