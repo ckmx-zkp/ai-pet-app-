@@ -75,7 +75,12 @@ async function submitBind() {
       <div v-if="boundDevice" class="bind-success">
         <p>绑定成功：{{ boundDevice.name || boundDevice.device_uid }}</p>
         <p class="muted">设备标识：{{ boundDevice.device_uid }}</p>
-        <RouterLink class="btn-ghost" :to="{ name: 'home' }">返回首页</RouterLink>
+        <RouterLink
+          class="btn-ghost"
+          :to="{ name: 'persona', query: { deviceId: boundDevice.id } }"
+        >
+          设置人设
+        </RouterLink>
       </div>
     </div>
 

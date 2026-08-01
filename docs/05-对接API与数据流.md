@@ -38,6 +38,13 @@ flowchart LR
 - 成功（201）显示已绑定的设备标识，并提供返回首页的入口；404 提示绑定码不存在或已失效；409 提示已被其他用户认领；403 表示错误地使用了 admin 账号。
 - 当前 app 的 MAC 直绑实现仅为 E1 过渡代码；backend E1.1 部署后必须同步迁移，不能将 MAC 视为用户绑定凭据。
 
+### 人设交互（E2）
+
+- 人设页必须带当前用户已认领设备的 `device_id`；绑定成功后由响应中的 `id` 跳转携带。未选择设备时不允许读写人设。
+- `GET /devices/{id}/persona` 返回 404 表示尚未配置，页面保持空表单；其他错误显示加载失败。
+- 保存请求为 `{ sun_sign, mbti, overrides: { taboo: string[] }, follow_latest }`。界面的“钉扎人设”与 `follow_latest` 语义相反：钉扎时传 `false`。
+- 当前已发布的最小种子仅含双鱼及 INFP/ISFP；其它星座或 MBTI 由 backend 返回 422，待 KB 种子发布后可用。
+
 App **不实现** OTA；OTA 属固件/小智服务。
 
 ## 环境配置

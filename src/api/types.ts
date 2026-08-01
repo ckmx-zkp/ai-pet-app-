@@ -30,3 +30,21 @@ export interface TokenResponse {
   access_token: string
   token_type: 'bearer'
 }
+
+/** 人设读写响应（GET/PUT /devices/{id}/persona） */
+export interface PersonaProfile {
+  device_id: number
+  sun_sign: string | null
+  mbti: string | null
+  overrides: Record<string, unknown>
+  follow_latest: boolean
+  kb_version: number | null
+}
+
+/** 人设保存请求 */
+export interface PersonaPayload {
+  sun_sign: string
+  mbti: string
+  overrides: { taboo: string[] }
+  follow_latest: boolean
+}
