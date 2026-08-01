@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import axios from 'axios'
 import http from '../api/http'
 import type { Device } from '../api/types'
+import { useDeviceStore } from '../stores/devices'
 
 // P2 绑定设备：扫码取景框占位 + 手动输入 binding_id。
 // MAC/device_uid 仅在设备、小智与后端之间流转，不能作为用户认领凭据。
@@ -10,6 +11,7 @@ const bindingId = ref('')
 const loading = ref(false)
 const errorMsg = ref('')
 const boundDevice = ref<Device | null>(null)
+const devices = useDeviceStore()
 
 async function submitBind() {
   errorMsg.value = ''
@@ -25,6 +27,7 @@ async function submitBind() {
       binding_id: bindingId.value
     })
     boundDevice.value = data
+    devices.setActiveDevice(data.id)
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const status = error.response?.status

@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import axios from 'axios'
 import http from '../api/http'
 import type { PersonaPayload, PersonaProfile } from '../api/types'
+import { useDeviceStore } from '../stores/devices'
 
 // P3 人设设置：星座 × MBTI × 忌口 × 钉扎。
 // 当前已发布最小种子为双鱼、INFP/ISFP，其余选项待 KB 发布后由后端开放。
@@ -25,9 +26,11 @@ const mbtiDims = [
 ] as const
 
 const route = useRoute()
+const devices = useDeviceStore()
 const deviceId = computed(() => {
-  const value = Number(route.query.deviceId)
-  return Number.isSafeInteger(value) && value > 0 ? value : null
+  const queryValue = Number(route.query.deviceId)
+  if (Number.isSafeInteger(queryValue) && queryValue > 0) return queryValue
+  return devices.activeDeviceId
 })
 const zodiac = ref('')
 const mbti = ref<Record<string, string>>({ EI: '', SN: '', TF: '', JP: '' })
