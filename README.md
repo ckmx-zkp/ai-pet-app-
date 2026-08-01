@@ -49,3 +49,18 @@
 2. 本仓先做「登录 + 设备 + 人设 + 记忆」手机竖屏  
 3. 适配桌面宽屏布局  
 4. 再做日运/小记、导出、多设备  
+
+## 工程命令（Epic A 已建工程）
+
+```bash
+npm install        # 安装依赖
+npm run dev        # 本地开发（Vite，默认 http://localhost:5173）
+npm run build      # 构建（先 vue-tsc 类型检查，strict 不过则失败）
+npm run preview    # 预览构建产物
+npm run typecheck  # 仅类型检查
+```
+
+技术栈：Vue 3 + Vite + TypeScript（strict）+ Pinia + vue-router + axios + vite-plugin-pwa；
+不引入 UI 组件库，原生 CSS 线框风格（主题色星云紫 `#6c5ce7`）。
+后端地址由 `VITE_API_BASE` 配置（见 `.env.example`）。生产部署默认使用同源 `/api`，
+由 `:8081` 的 Nginx 反代到 backend；本地直连后端时再通过 `.env.local` 覆盖。

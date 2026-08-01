@@ -37,10 +37,17 @@ App **不实现** OTA；OTA 属固件/小智服务。
 ## 环境配置
 
 ```text
-API_BASE=https://api.example.com/api
+VITE_API_BASE=/api
 ```
 
-内测包允许用户改 API_BASE（设置页）；正式包可写死并签名校验。
+生产部署采用同源反代：用户端由 Nginx 的 `:8081` 提供静态文件，并将 `/api/`
+代理至 backend `127.0.0.1:8010`。因此构建产物必须使用相对地址 `/api`，避免浏览器
+跨端口访问管理台的 `:8080`。本地直连后端时可在 `.env.local` 覆盖
+`VITE_API_BASE=http://<host>:<port>/api`。
+
+认证契约：`POST /auth/register` 返回用户信息（201），不签发 Token；随后必须调用
+`POST /auth/login`，读取 `access_token` 并以 `Authorization: Bearer <token>` 调用
+`GET /auth/me`。
 
 ## 错误与空态
 

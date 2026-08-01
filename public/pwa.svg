@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- 简单占位图标：星云紫圆角方块 + 宠物爪印 -->
+  <rect width="512" height="512" rx="112" fill="#6c5ce7"/>
+  <g fill="#efedfc">
+    <ellipse cx="256" cy="320" rx="88" ry="72"/>
+    <ellipse cx="160" cy="228" rx="34" ry="44"/>
+    <ellipse cx="224" cy="188" rx="34" ry="44"/>
+    <ellipse cx="288" cy="188" rx="34" ry="44"/>
+    <ellipse cx="352" cy="228" rx="34" ry="44"/>
+  </g>
+</svg>
