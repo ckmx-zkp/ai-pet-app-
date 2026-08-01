@@ -49,13 +49,19 @@ flowchart LR
 - 人设页必须带当前用户已认领设备的 `device_id`；绑定成功后由响应中的 `id` 跳转携带。未选择设备时不允许读写人设。
 - `GET /devices/{id}/persona` 返回 404 表示尚未配置，页面保持空表单；其他错误显示加载失败。
 - 保存请求为 `{ sun_sign, mbti, overrides: { taboo: string[] }, follow_latest }`。界面的“钉扎人设”与 `follow_latest` 语义相反：钉扎时传 `false`。
-- 当前已发布的最小种子仅含双鱼及 INFP/ISFP；其它星座或 MBTI 由 backend 返回 422，待 KB 种子发布后可用。
+- 后端已发布完整的 12 星座与 16 MBTI 种子；若后续返回 422，页面提示保存失败并保留用户当前选择。
 
 ### 历史交互（E4）
 
 - 历史页使用当前选中设备的 `device_id` 请求 `GET /devices/{id}/messages?limit&offset`，仅展示 backend 已脱敏的 `content_redacted`，按本地日期分组。
 - 首次加载 20 条，可继续加载下一页；无当前设备时引导用户先绑定或在首页选择设备。
 - 删除以一天为最小确认单位，调用 `DELETE /devices/{id}/messages?from=<ISO>&to=<ISO>`；后端要求至少提供一个时间边界并写审计，前端不得发无条件删除请求。
+
+### 外设状态交互（D1）
+
+- 外设状态页使用当前选中设备的 `device_id` 调用 `GET /devices/{id}/peripheral`，仅消费用户 API，不直连设备或内部 MCP。
+- 响应字段为 `eye_emotion`、`eye_gaze`、`eye_closed`、`extra`、`updated_at`；页面将眼睛状态转换为中文可读文案，并显示快照更新时间。
+- 404 的语义是该设备尚没有外设快照，显示等待设备上报的空状态；无选中设备时引导至首页选择或绑定设备。其他请求失败显示错误与刷新入口。
 
 App **不实现** OTA；OTA 属固件/小智服务。
 

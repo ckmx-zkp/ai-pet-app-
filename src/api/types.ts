@@ -57,3 +57,13 @@ export interface ChatMessage {
   content_redacted: string
   created_at: string
 }
+
+/** 外设最近一次上报的状态快照（GET /devices/{id}/peripheral） */
+export interface PeripheralState {
+  device_id: number
+  eye_emotion: string | null
+  eye_gaze: string | null
+  eye_closed: boolean | null
+  extra: Record<string, unknown>
+  updated_at: string
+}

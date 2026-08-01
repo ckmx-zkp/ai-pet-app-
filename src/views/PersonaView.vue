@@ -88,7 +88,7 @@ async function save() {
     savedTip.value = '已保存，下次和宠物说话时生效'
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 422) {
-      errorMsg.value = '该星座或 MBTI 尚未发布，请先选择双鱼与 INFP/ISFP'
+      errorMsg.value = '人设组合暂不可用，请检查选择后重试'
     } else {
       errorMsg.value = '保存失败，请稍后重试'
     }
