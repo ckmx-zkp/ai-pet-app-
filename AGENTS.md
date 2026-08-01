@@ -1,19 +1,18 @@
 # AGENTS.md — ai-pet-app（用户端：手机 + 桌面）
 
-> AI 会话进本仓前先在 `D:/Home_Work/work_dashboard` 执行 `git pull --ff-only`，再读
-> `AI-Pet项目全景与进度.md`（第一信息源）、`D:/Home_Work/AGENTS.md` 和
-> `AI-Pet协作看板.md`。看板有其他会话的未提交改动时不得混入自己的提交。
+> AI 会话进本仓前先读 `D:/Home_Work/AGENTS.md`，并按其中的安全规则检查/同步
+> `D:/Home_Work/work_dashboard`，再读 `AI-Pet项目全景与进度.md`（第一信息源）和
+> `AI-Pet协作看板.md`。看板有未提交改动时不得 pull，也不得混入自己的提交。
 
 ## 定位
 
 AI Pet 的**用户端客户端**（手机 PWA + 桌面）：注册登录、绑设备/配网引导、人设（星座×MBTI）、历史与记忆管理、日运/小记、外设状态只读。只调 `ai-pet-backend` 的公开用户 API；**不直连设备 MQTT/语音，不做运营功能**（那是 ai-pet-admin）。
 
-## 当前状态：Epic A + B1 已完成；B2 正在迁移（2026-08-02）
+## 当前状态：Epic A + B1 + B2.1 已完成（2026-08-02）
 
 Vue 3 + Vite + TS(strict) + Pinia + vue-router + axios + vite-plugin-pwa 已落地；
-P0–P8 页面线框与路由全部挂通，B1 登录/注册已对接真实后端。B2.1 的 MAC 直绑版本
-已部署至 `:8081`，但 backend E1.1 已将正式契约改为 `binding_id` 认领、当前待部署：
-**后续不得扩展 MAC 直绑，待 E1.1 上线后优先迁移绑定页**。
+P0–P8 页面线框与路由全部挂通，B1 登录/注册已对接真实后端。B2.1 已按 backend E1.1
+正式契约改为 `binding_id` 认领并部署至 `:8081`；**后续不得恢复或扩展 MAC 直绑**。
 技术选型已定（见 `docs/07`），后续可用 Capacitor 包壳。**明确放弃 Flutter / .NET MAUI / 原生双端**，不要再起选型讨论，除非有新材料先改 `docs/07`。
 
 ## 部署与跨仓硬边界
@@ -37,7 +36,7 @@ P0–P8 页面线框与路由全部挂通，B1 登录/注册已对接真实后�
 
 ## 开工前提
 
-开发前确认 backend 用户 API 的**已部署**状态（看总看板“集成点状态”与 backend 进度摘要，不能只看本地代码）；auth 已上线。devices/persona/messages/memories 以看板为准，尤其 E1.1 与 E2 当前均待部署联调。
+开发前确认 backend 用户 API 的**已部署**状态（看总看板“集成点状态”与 backend 进度摘要，不能只看本地代码）；auth、E1.1 devices、E2 persona、E4 messages 已部署。memories、analyses、peripheral 等仍以看板为准。
 
 ## 约定（来自 README，AI 会话必须遵守）
 

@@ -4,8 +4,9 @@ import axios from 'axios'
 import http from '../api/http'
 import type { Device } from '../api/types'
 
-// P2 绑定设备：扫码取景框占位 + 手动输入 device_uid
-const deviceUid = ref('')
+// P2 绑定设备：扫码取景框占位 + 手动输入 binding_id。
+// MAC/device_uid 仅在设备、小智与后端之间流转，不能作为用户认领凭据。
+const bindingId = ref('')
 const loading = ref(false)
 const errorMsg = ref('')
 const boundDevice = ref<Device | null>(null)
@@ -13,24 +14,28 @@ const boundDevice = ref<Device | null>(null)
 async function submitBind() {
   errorMsg.value = ''
   boundDevice.value = null
-  if (!deviceUid.value) {
-    errorMsg.value = '请输入设备标识'
+  if (!bindingId.value) {
+    errorMsg.value = '请输入绑定码'
     return
   }
 
   loading.value = true
   try {
     const { data } = await http.post<Device>('/devices/bind', {
-      device_uid: deviceUid.value
+      binding_id: bindingId.value
     })
     boundDevice.value = data
   } catch (error) {
     if (axios.isAxiosError(error)) {
       const status = error.response?.status
-      if (status === 409) {
-        errorMsg.value = '该设备已被其他账号绑定'
+      if (status === 403) {
+        errorMsg.value = '请使用普通用户账号绑定设备'
+      } else if (status === 404) {
+        errorMsg.value = '绑定码不存在或已失效，请检查设备二维码'
+      } else if (status === 409) {
+        errorMsg.value = '该设备已被其他用户认领'
       } else if (status === 422) {
-        errorMsg.value = '设备标识格式不正确，请检查后重试'
+        errorMsg.value = '绑定码格式不正确，请检查后重试'
       } else {
         const data = error.response?.data as { detail?: string } | undefined
         errorMsg.value = data?.detail ?? '绑定失败，请稍后重试'
@@ -54,15 +59,15 @@ async function submitBind() {
     </div>
 
     <div class="card manual-form">
-      <p class="muted">或手动输入设备标识（device_uid，形如 aa:bb:cc:dd:ee:ff）</p>
+      <p class="muted">或手动输入设备二维码上的绑定码（binding_id）</p>
       <form @submit.prevent="submitBind">
         <input
-          v-model.trim="deviceUid"
+          v-model.trim="bindingId"
           class="input"
           type="text"
-          placeholder="device_uid"
+          placeholder="binding_id"
         />
-        <button class="btn-primary" type="submit" :disabled="!deviceUid || loading">
+        <button class="btn-primary" type="submit" :disabled="!bindingId || loading">
           {{ loading ? '绑定中…' : '绑定' }}
         </button>
       </form>
