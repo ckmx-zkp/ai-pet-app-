@@ -28,15 +28,15 @@ flowchart LR
 ## 配网与绑定（说明）
 
 1. 用户按引导让设备上网（固件现有小智配网流程）。  
-2. 设备连上 `xiaozhi-server` 后具备 `device_uid`。  
-3. App 调用 `POST /devices/bind` 把设备挂到当前用户。  
+2. 设备连上 `xiaozhi-server` 后以 MAC/SN 作为内部 `device_uid` 上报 `devices/seen`。  
+3. backend 首见设备生成不可猜测的 `binding_id`；App 扫码或手动输入该绑定标识，并调用 `POST /devices/bind` 认领。App 不得传 MAC 或后端自增 ID 认领设备。  
 4. 人设写入 backend → 下次会话 xiaozhi 拉 `persona_pack`。  
 
-### 手动绑定交互
+### 手动绑定交互（E1.1 正式契约）
 
-- 提交前去除输入首尾空白；请求体为 `{ "device_uid": "<MAC>" }`，携带当前登录用户的 Bearer Token。
-- 成功（201）显示已绑定的设备标识，并提供返回首页的入口；人设接口尚未可用时不跳转人设页。
-- 401 由全局拦截器清 Token 并回登录；409 提示该设备已被其他账号绑定；422 提示标识格式不符合后端校验要求。
+- 提交前去除输入首尾空白；请求体为 `{ "binding_id": "<扫码或设备标签提供的绑定码>" }`，携带当前登录用户的 Bearer Token。
+- 成功（201）显示已绑定的设备标识，并提供返回首页的入口；404 提示绑定码不存在或已失效；409 提示已被其他用户认领；403 表示错误地使用了 admin 账号。
+- 当前 app 的 MAC 直绑实现仅为 E1 过渡代码；backend E1.1 部署后必须同步迁移，不能将 MAC 视为用户绑定凭据。
 
 App **不实现** OTA；OTA 属固件/小智服务。
 
