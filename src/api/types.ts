@@ -16,12 +16,12 @@ export interface Device {
   id: number
   /** 设备唯一标识（MAC），绑定时使用 */
   device_uid: string
-  name: string
+  name: string | null
   /** 在线状态：E1 阶段按 online_at 阈值粗判，未接入 xiaozhi 前恒为 false */
   online: boolean
   firmware_version?: string
-  /** 最后活跃时间（online_at 兼任 last_seen） */
-  online_at?: string
+  /** 最后活跃时间（后端字段名为 last_seen_at） */
+  last_seen_at?: string | null
   capabilities?: Record<string, unknown>
 }
 
