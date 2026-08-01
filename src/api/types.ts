@@ -48,3 +48,12 @@ export interface PersonaPayload {
   overrides: { taboo: string[] }
   follow_latest: boolean
 }
+
+/** 脱敏后的历史消息（GET /devices/{id}/messages） */
+export interface ChatMessage {
+  id: number
+  session_id: number
+  role: 'user' | 'assistant' | 'system'
+  content_redacted: string
+  created_at: string
+}

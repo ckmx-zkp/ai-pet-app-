@@ -8,13 +8,14 @@
 
 AI Pet 的**用户端客户端**（手机 PWA + 桌面）：注册登录、绑设备/配网引导、人设（星座×MBTI）、历史与记忆管理、日运/小记、外设状态只读。只调 `ai-pet-backend` 的公开用户 API；**不直连设备 MQTT/语音，不做运营功能**（那是 ai-pet-admin）。
 
-## 当前状态：Epic A + B1 + B2 + C1 已完成（2026-08-02）
+## 当前状态：Epic A + B1 + B2 + C1 + C3 已完成（2026-08-02）
 
 Vue 3 + Vite + TS(strict) + Pinia + vue-router + axios + vite-plugin-pwa 已落地；
 P0–P8 页面线框与路由全部挂通，B1 登录/注册已对接真实后端。B2.1 已按 backend E1.1
 正式契约改为 `binding_id` 认领并部署至 `:8081`；**后续不得恢复或扩展 MAC 直绑**。
 B2.2 已接入 `GET /devices`：首页展示设备摘要、支持当前设备选择并持久化，供人设等页面复用。
 C1 已接入 E2 人设 GET/PUT：绑定成功后携带设备 ID 进入人设页，支持加载与保存星座、MBTI、忌口和钉扎。
+C3 已接入 E4 历史 GET/DELETE：按日浏览脱敏消息、分页加载与按天确认删除。
 技术选型已定（见 `docs/07`），后续可用 Capacitor 包壳。**明确放弃 Flutter / .NET MAUI / 原生双端**，不要再起选型讨论，除非有新材料先改 `docs/07`。
 
 ## 部署与跨仓硬边界

@@ -51,6 +51,12 @@ flowchart LR
 - 保存请求为 `{ sun_sign, mbti, overrides: { taboo: string[] }, follow_latest }`。界面的“钉扎人设”与 `follow_latest` 语义相反：钉扎时传 `false`。
 - 当前已发布的最小种子仅含双鱼及 INFP/ISFP；其它星座或 MBTI 由 backend 返回 422，待 KB 种子发布后可用。
 
+### 历史交互（E4）
+
+- 历史页使用当前选中设备的 `device_id` 请求 `GET /devices/{id}/messages?limit&offset`，仅展示 backend 已脱敏的 `content_redacted`，按本地日期分组。
+- 首次加载 20 条，可继续加载下一页；无当前设备时引导用户先绑定或在首页选择设备。
+- 删除以一天为最小确认单位，调用 `DELETE /devices/{id}/messages?from=<ISO>&to=<ISO>`；后端要求至少提供一个时间边界并写审计，前端不得发无条件删除请求。
+
 App **不实现** OTA；OTA 属固件/小智服务。
 
 ## 环境配置
