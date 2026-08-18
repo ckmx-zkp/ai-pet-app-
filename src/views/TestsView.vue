@@ -198,20 +198,31 @@ async function computeChart() {
       </div>
 
       <div v-else class="stack">
-        <button class="btn-ghost" type="button" @click="activeQuiz = null; attempt = null">返回列表</button>
-        <div class="card">
-          <h2 class="section-title">{{ activeQuiz.title }}</h2>
-          <p class="muted">{{ activeQuiz.subtitle }}</p>
+        <div class="card quiz-sheet">
+          <div class="sheet-head">
+            <div>
+              <h2 class="section-title">{{ activeQuiz.title }}</h2>
+              <p class="muted">{{ activeQuiz.subtitle }}</p>
+            </div>
+            <button class="text-back" type="button" @click="activeQuiz = null; attempt = null">返回列表</button>
+          </div>
           <div v-for="(question, index) in activeQuiz.questions" :key="question.id" class="q">
-            <p>{{ index + 1 }}. {{ question.prompt }}</p>
-            <label v-for="option in question.options" :key="option.key" class="opt">
+            <p class="q-title"><span class="q-num">{{ index + 1 }}</span>{{ question.prompt }}</p>
+            <label
+              v-for="option in question.options"
+              :key="option.key"
+              class="opt"
+              :class="{ selected: answers[index] === option.key }"
+            >
               <input v-model="answers[index]" type="radio" :value="option.key" />
-              {{ option.text }}
+              <span class="opt-text">{{ option.text }}</span>
             </label>
           </div>
+          <p class="muted progress">已答 {{ answers.filter(Boolean).length }}/{{ activeQuiz.questions.length }}</p>
           <button class="btn-primary" type="button" :disabled="submitting" @click="submitQuiz">
             {{ submitting ? '提交中…' : '看结果' }}
           </button>
+          <p v-if="shareHint && !attempt" class="error-msg">{{ shareHint }}</p>
         </div>
 
         <div v-if="attempt" class="card result">
@@ -234,11 +245,14 @@ async function computeChart() {
     <template v-else>
       <div class="card stack">
         <p class="muted">简略版：太阳、月亮、水金火木土；填了出生时刻和城市才有上升。不作专业占星。</p>
-        <label class="opt"><input v-model="useBazi" type="checkbox" /> 用已录入的公历八字计算</label>
+        <label class="opt">
+          <input v-model="useBazi" type="checkbox" />
+          <span class="opt-text">用已录入的公历八字计算</span>
+        </label>
         <template v-if="!useBazi">
-          <label>公历生日<input v-model="birthDate" class="input" type="date" /></label>
-          <label>出生时刻（可空）<input v-model="birthTime" class="input" type="time" /></label>
-          <label>出生城市<input v-model="birthPlace" class="input" type="text" placeholder="北京" /></label>
+          <label class="field">公历生日<input v-model="birthDate" class="input" type="date" /></label>
+          <label class="field">出生时刻（可空）<input v-model="birthTime" class="input" type="time" /></label>
+          <label class="field">出生城市<input v-model="birthPlace" class="input" type="text" placeholder="北京" /></label>
         </template>
         <button class="btn-primary" type="button" :disabled="chartLoading" @click="computeChart">
           {{ chartLoading ? '计算中…' : '生成星盘' }}
@@ -287,6 +301,10 @@ async function computeChart() {
   flex-direction: column;
   gap: 12px;
 }
+.section-title {
+  margin: 0 0 10px;
+  font-size: 16px;
+}
 .quiz-card {
   text-align: left;
   display: flex;
@@ -298,13 +316,103 @@ async function computeChart() {
   color: var(--color-primary);
   font-size: 12px;
 }
+.quiz-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.sheet-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.sheet-head .section-title {
+  margin: 0 0 4px;
+}
+.sheet-head .muted {
+  margin: 0;
+}
+.text-back {
+  flex: none;
+  border: 0;
+  background: none;
+  color: var(--color-primary);
+  font-size: 13px;
+  padding: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
 .q {
-  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+}
+.q-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+.q-num {
+  flex: none;
+  min-width: 22px;
+  height: 22px;
+  border-radius: 99px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-size: 12px;
+  line-height: 22px;
+  text-align: center;
 }
 .opt {
   display: flex;
-  gap: 8px;
-  margin: 6px 0;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+}
+.opt.selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+.opt input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--color-primary);
+}
+.opt-text {
+  flex: 1;
+  line-height: 1.45;
+  font-size: 14px;
+}
+.progress {
+  margin: 0;
+  text-align: right;
+}
+.error-msg {
+  margin: 0;
+  color: #d63031;
+  font-size: 13px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-dim);
 }
 .result h2 {
   margin: 6px 0 10px;
@@ -314,11 +422,5 @@ async function computeChart() {
   flex-direction: column;
   gap: 8px;
   margin-top: 12px;
-}
-label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin: 8px 0;
 }
 </style>
