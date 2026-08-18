@@ -3,7 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import http from '../api/http'
-import type { AnalysisResult, BaziProfile, PersonaPayload, PersonaProfile } from '../api/types'
+import { buildPersonaPayload, linesToList } from '../api/persona'
+import type { AnalysisResult, BaziProfile, PersonaProfile, QuestionnaireOut } from '../api/types'
 import { useDeviceStore } from '../stores/devices'
 
 // P3 人设设置：星座 × MBTI × 忌口 × 钉扎。
@@ -32,6 +33,7 @@ const deviceId = computed(() => {
   if (Number.isSafeInteger(queryValue) && queryValue > 0) return queryValue
   return devices.activeDeviceId
 })
+const loadedProfile = ref<PersonaProfile | null>(null)
 const zodiac = ref('')
 const mbti = ref<Record<string, string>>({ EI: '', SN: '', TF: '', JP: '' })
 const taboo = ref('')
@@ -40,6 +42,15 @@ const savedTip = ref('')
 const errorMsg = ref('')
 const loading = ref(false)
 const saving = ref(false)
+
+// A10 问卷：只展示后端题面并提交 a/b，不算型、不替代直选
+const quizOpen = ref(false)
+const quiz = ref<QuestionnaireOut | null>(null)
+const quizAnswers = ref<string[]>([])
+const quizLoading = ref(false)
+const quizSaving = ref(false)
+const quizError = ref('')
+const quizTip = ref('')
 
 // D5 成长建议卡：服务端 persona_growth 分析产物（契约见 backend docs/06）
 const growth = ref<AnalysisResult | null>(null)
@@ -88,12 +99,22 @@ function formatTime(value: string) {
 }
 
 function applyProfile(profile: PersonaProfile) {
+  loadedProfile.value = profile
   zodiac.value = profile.sun_sign ?? ''
   const value = profile.mbti ?? ''
   mbti.value = { EI: value[0] ?? '', SN: value[1] ?? '', TF: value[2] ?? '', JP: value[3] ?? '' }
   const rawTaboo = profile.overrides.taboo
   taboo.value = Array.isArray(rawTaboo) ? rawTaboo.filter((item): item is string => typeof item === 'string').join('\n') : ''
   pinned.value = !profile.follow_latest
+}
+
+function currentPayload() {
+  return buildPersonaPayload(loadedProfile.value, {
+    sun_sign: zodiac.value,
+    mbti: selectedMbti.value,
+    taboo: linesToList(taboo.value, 40),
+    follow_latest: !pinned.value
+  })
 }
 
 async function loadPersona() {
@@ -120,14 +141,8 @@ async function save() {
   saving.value = true
   errorMsg.value = ''
   savedTip.value = ''
-  const payload: PersonaPayload = {
-    sun_sign: zodiac.value,
-    mbti: selectedMbti.value,
-    overrides: { taboo: taboo.value.split('\n').map((item) => item.trim()).filter(Boolean) },
-    follow_latest: !pinned.value
-  }
   try {
-    const { data } = await http.put<PersonaProfile>(`/devices/${deviceId.value}/persona`, payload)
+    const { data } = await http.put<PersonaProfile>(`/devices/${deviceId.value}/persona`, currentPayload())
     applyProfile(data)
     savedTip.value = '已保存，下次和宠物说话时生效'
   } catch (error) {
@@ -140,8 +155,6 @@ async function save() {
     saving.value = false
   }
 }
-
-onMounted(loadPersona)
 
 // 读取最近一条 persona_growth 建议（按 created_at 倒序，取第一条）
 async function loadGrowth() {
@@ -184,6 +197,68 @@ async function applyGrowth() {
     }
   } finally {
     applying.value = false
+  }
+}
+
+async function loadQuiz() {
+  if (!deviceId.value || quizLoading.value) return
+  quizLoading.value = true
+  quizError.value = ''
+  try {
+    const { data } = await http.get<QuestionnaireOut>(`/devices/${deviceId.value}/persona/questionnaire`)
+    quiz.value = data
+    quizAnswers.value = Array.from({ length: data.answers_required }, (_, index) => quizAnswers.value[index] || '')
+  } catch {
+    quizError.value = '加载问卷失败，请稍后重试'
+  } finally {
+    quizLoading.value = false
+  }
+}
+
+async function openQuiz() {
+  quizOpen.value = !quizOpen.value
+  quizTip.value = ''
+  if (quizOpen.value && !quiz.value) await loadQuiz()
+}
+
+function setQuizAnswer(index: number, choice: string) {
+  const next = [...quizAnswers.value]
+  next[index] = choice
+  quizAnswers.value = next
+}
+
+async function submitQuiz() {
+  if (!deviceId.value || !quiz.value) return
+  if (!zodiac.value && !loadedProfile.value?.sun_sign) {
+    quizError.value = '尚未配置人设时请先选择星座，再提交问卷'
+    return
+  }
+  if (quizAnswers.value.length !== quiz.value.answers_required || quizAnswers.value.some((item) => item !== 'a' && item !== 'b')) {
+    quizError.value = `请答完 ${quiz.value.answers_required} 题（每题选 A 或 B）`
+    return
+  }
+  quizSaving.value = true
+  quizError.value = ''
+  quizTip.value = ''
+  const payload = currentPayload()
+  try {
+    const { data } = await http.post<PersonaProfile>(`/devices/${deviceId.value}/persona/questionnaire`, {
+      answers: quizAnswers.value,
+      sun_sign: zodiac.value || undefined,
+      overrides: payload.overrides,
+      follow_latest: payload.follow_latest,
+      dossier: payload.dossier
+    })
+    applyProfile(data)
+    quizTip.value = `后端已算出 MBTI：${data.mbti ?? ''}。已写入人设，下次和宠物说话时生效。`
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 422) {
+      quizError.value = '请先选择星座，并确保 20 题都选了 A 或 B'
+    } else {
+      quizError.value = '提交问卷失败，请稍后重试'
+    }
+  } finally {
+    quizSaving.value = false
   }
 }
 
@@ -299,6 +374,56 @@ async function saveBazi() {
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- A10 问卷：后端计分，不替代上方直选 -->
+    <div class="card quiz-card">
+      <div class="quiz-header">
+        <div>
+          <h2 class="section-title">用问卷测 MBTI</h2>
+          <p class="muted">20 题由后端出题并计分，结果会写回上面的四维选择。直选仍然可用。</p>
+        </div>
+        <button class="btn-ghost" type="button" :disabled="quizLoading" @click="openQuiz">
+          {{ quizOpen ? '收起问卷' : (quizLoading ? '加载中…' : '开始问卷') }}
+        </button>
+      </div>
+      <template v-if="quizOpen">
+        <p v-if="quizLoading" class="muted">正在加载题面…</p>
+        <ol v-else-if="quiz" class="quiz-list">
+          <li v-for="(question, index) in quiz.questions" :key="question.id" class="quiz-item">
+            <p class="quiz-prompt">{{ index + 1 }}. {{ question.prompt }}</p>
+            <div class="quiz-options">
+              <button
+                type="button"
+                class="quiz-choice"
+                :class="{ active: quizAnswers[index] === 'a' }"
+                @click="setQuizAnswer(index, 'a')"
+              >
+                A. {{ question.a }}
+              </button>
+              <button
+                type="button"
+                class="quiz-choice"
+                :class="{ active: quizAnswers[index] === 'b' }"
+                @click="setQuizAnswer(index, 'b')"
+              >
+                B. {{ question.b }}
+              </button>
+            </div>
+          </li>
+        </ol>
+        <button
+          v-if="quiz"
+          class="btn-primary"
+          type="button"
+          :disabled="quizSaving"
+          @click="submitQuiz"
+        >
+          {{ quizSaving ? '提交中…' : '提交问卷' }}
+        </button>
+        <p v-if="quizTip" class="muted">{{ quizTip }}</p>
+        <p v-if="quizError" class="error-msg">{{ quizError }}</p>
+      </template>
     </div>
 
     <!-- 忌口：多行文本 -->
@@ -417,6 +542,7 @@ async function saveBazi() {
       {{ saving ? '保存中…' : '保存' }}
     </button>
     <p v-if="savedTip" class="muted save-tip">{{ savedTip }}</p>
+    <RouterLink class="star-link" :to="{ name: 'star' }">编辑我的星仔角色档案</RouterLink>
     </template>
   </div>
 </template>
@@ -623,5 +749,66 @@ async function saveBazi() {
 
 .empty {
   min-height: 160px;
+}
+
+.quiz-card,
+.quiz-header,
+.quiz-options {
+  display: flex;
+  gap: 10px;
+}
+
+.quiz-card,
+.quiz-item {
+  flex-direction: column;
+}
+
+.quiz-header {
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.quiz-header .section-title,
+.quiz-header p,
+.quiz-prompt {
+  margin: 0;
+}
+
+.quiz-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.quiz-options {
+  flex-direction: column;
+}
+
+.quiz-choice {
+  text-align: left;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+.quiz-choice.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.star-link {
+  text-align: center;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-size: 14px;
 }
 </style>
