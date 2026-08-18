@@ -18,9 +18,10 @@ flowchart LR
 |------|-----|
 | 登录注册 | `POST /auth/login` `POST /auth/register` |
 | 设备 | `GET /devices` `POST /devices/bind` `GET /devices/{id}` |
-| 人设 | `GET/PUT /devices/{id}/persona` |
+| 宠物性格 | `GET/PUT /devices/{id}/persona` |
 | 角色档案 | `GET/PUT /devices/{id}/persona` 的 `dossier` |
-| 人设问卷 | `GET/POST /devices/{id}/persona/questionnaire`（不算型） |
+| 用户性格 | `GET/PUT /owner` |
+| 用户性格测试 | `GET/POST /owner/questionnaire`（设备路径问卷仅为别名，写入主人） |
 | 历史 | `GET/DELETE /devices/{id}/messages` |
 | 记忆 | `CRUD /devices/{id}/memories` + `approve` |
 | 分析/小记/画像 | `GET /devices/{id}/analyses?kind=`（`daily_summary` / `persona_growth` / `memory_profile`） |
@@ -64,12 +65,13 @@ flowchart LR
 - 独立页读写同一 `GET/PUT /persona`；保存时回传现有星座/MBTI/overrides/钉扎，只改 dossier。
 - 尚未配置人设时不可单独写档案，引导先去人设页。
 
-### 人设问卷（E2.1 / A10）
+### 用户性格与问卷（E2.1 / A10，主体=主人）
 
-- `GET /devices/{id}/persona/questionnaire` 返回 `answers_required` 与 20 道题（`id/dimension/prompt/a/b`），不含计分键。
-- `POST` body：`{ answers: ("a"|"b")[20], sun_sign? }`；可附带现有 `overrides`/`dossier`/`follow_latest`，避免冲掉档案与成长建议。
-- 未配置人设时 `sun_sign` 必填，否则 422。响应为人设对象，用返回的 `mbti` 回填直选，不在客户端计分。
-- 问卷不得替代星座/MBTI 直选。`POST /persona/preview` 本轮不做（返回内部 persona_pack 片段，不直接给用户看）。
+- 用户性格页读 `GET /owner`：`sun_sign` / `mbti` / `quiz_results`；未建档 404 为空表单。保存走 `PUT /owner`，只写主人档案。
+- **用户性格测试**走 `GET/POST /owner/questionnaire`。题面 20 道（`id/dimension/prompt/a/b`），不含计分键。`POST` body：`{ answers: ("a"|"b")[20], sun_sign? }`。
+- 响应是主人档案（`subject=owner`），**不写**宠物 `persona`。客户端不得把结果回填到宠物性格页。
+- 设备路径 `GET/POST /devices/{id}/persona/questionnaire` 仅为别名，语义相同；新代码只用 `/owner`。
+- 问卷不得替代宠物性格的星座/MBTI 直选。`POST /persona/preview` 本轮不做。
 
 ### 历史交互（E4）
 

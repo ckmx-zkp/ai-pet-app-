@@ -24,7 +24,8 @@ D6 已接入 E10 `GET /devices/{id}/fortune/daily`（日运页页首运势卡片
 已生成时的八字运势；`generating=true` 走「生成中」空态，404 引导先配置人设。
 D7 已接入 E10 `GET/PUT /devices/{id}/bazi`（人设页内「主人八字」卡）：阳历/阴历 + 出生日期 + 时辰（可未知）+
 出生地 + 性别，未录入 GET 404 为空表单，保存成功提示去日运页看八字运势。
-C5/A1 我的星仔档案：dossier 六字段全部可见可编辑（`/star`）。C6/A10 人设问卷入口不算型。D3/A8
+C5/A1 我的星仔档案：dossier 六字段全部可见可编辑（`/star`）。C6/A10 问卷已改接
+`/owner`，测的是用户不是宠物。C7 宠物性格页与用户性格页命名拆分，页顶粘性跳转。D3/A8
 导出同步 JSON。D8/A9 记忆画像卡。提交 `ffd04ae`，公网 `index-BhrOz7WB.js`。
 技术选型已定（见 `docs/07`），后续可用 Capacitor 包壳。**明确放弃 Flutter / .NET MAUI / 原生双端**，不要再起选型讨论，除非有新材料先改 `docs/07`。
 

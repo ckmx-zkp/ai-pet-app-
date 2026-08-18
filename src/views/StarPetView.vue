@@ -76,7 +76,7 @@ async function load() {
 async function save() {
   if (!deviceId.value || !loaded.value) return
   if (!loaded.value.sun_sign || !loaded.value.mbti) {
-    errorMsg.value = '当前人设缺少星座或 MBTI，请先到人设页补全'
+    errorMsg.value = '当前宠物性格缺少星座或 MBTI，请先到宠物性格页补全'
     return
   }
   saving.value = true
@@ -117,8 +117,8 @@ onMounted(load)
     <template v-else-if="deviceId">
       <p v-if="loading" class="muted">正在加载角色档案…</p>
       <div v-else-if="noPersona" class="placeholder-block empty">
-        还没有设置人设，请先选择星座和 MBTI，再来填写角色档案。
-        <RouterLink class="empty-link" :to="{ name: 'persona', query: { deviceId } }">去设置人设</RouterLink>
+        还没有设置宠物性格，请先选择星座和 MBTI，再来填写角色档案。
+        <RouterLink class="empty-link" :to="{ name: 'persona', query: { deviceId } }">去设置宠物性格</RouterLink>
       </div>
       <template v-else>
         <p class="muted">六项都会进入下次对话的人设。身份与关系是整段文字；其余每行一条，最多 8 条。</p>

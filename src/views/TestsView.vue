@@ -145,7 +145,7 @@ async function computeChart() {
     chart.value = data
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 422) {
-      chartError.value = '请填写公历生日，或先在人设页录入公历八字'
+      chartError.value = '请填写公历生日，或先在用户性格页录入公历生辰'
     } else {
       chartError.value = '计算失败'
     }
@@ -157,8 +157,14 @@ async function computeChart() {
 
 <template>
   <div class="page">
-    <h1 class="page-title">测试</h1>
-    <p class="muted">20 题以内的小测验和测测风格简略星盘。默认只自己看，想让宠物知道再同步。</p>
+    <h1 class="page-title">趣味测试</h1>
+    <p class="muted">这是给你玩的趣味测验和简略星盘，不是星仔的宠物性格。默认只自己看。</p>
+    <nav class="jump-nav" aria-label="快捷跳转">
+      <button class="jump-chip" type="button" @click="tab = 'quiz'">趣味测验</button>
+      <button class="jump-chip" type="button" @click="tab = 'chart'">简略星盘</button>
+      <RouterLink class="jump-chip" :to="{ name: 'owner', hash: '#quiz' }">用户性格测试</RouterLink>
+      <RouterLink class="jump-chip" :to="{ name: 'persona' }">宠物性格</RouterLink>
+    </nav>
 
     <div class="tabs">
       <button type="button" :class="{ active: tab === 'quiz' }" @click="tab = 'quiz'">趣味测验</button>

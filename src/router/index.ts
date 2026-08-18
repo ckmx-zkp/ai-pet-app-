@@ -13,6 +13,7 @@ import ProfileView from '../views/ProfileView.vue'
 import TestsView from '../views/TestsView.vue'
 import TestResultView from '../views/TestResultView.vue'
 import StarPetView from '../views/StarPetView.vue'
+import OwnerView from '../views/OwnerView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -25,6 +26,7 @@ const router = createRouter({
         { path: '', name: 'home', component: HomeView },
         { path: 'bind', name: 'bind', component: BindView },
         { path: 'persona', name: 'persona', component: PersonaView },
+        { path: 'owner', name: 'owner', component: OwnerView },
         { path: 'star', name: 'star', component: StarPetView },
         { path: 'memories', name: 'memories', component: MemoriesView },
         { path: 'history', name: 'history', component: HistoryView },

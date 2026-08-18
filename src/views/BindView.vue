@@ -82,7 +82,7 @@ async function submitBind() {
           class="btn-ghost"
           :to="{ name: 'persona', query: { deviceId: boundDevice.id } }"
         >
-          设置人设
+          设置宠物性格
         </RouterLink>
       </div>
     </div>

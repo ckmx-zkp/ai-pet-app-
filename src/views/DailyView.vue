@@ -16,7 +16,7 @@ const activeDevice = computed(() => devices.activeDevice)
 const fortune = ref<DailyFortune | null>(null)
 const fortuneLoading = ref(false)
 const fortuneError = ref('')
-// 404 = 设备未配置星座人设（或无此设备），引导先去人设页设置
+// 404 = 主人未配置太阳星座（日运 L1 不回退宠物星座），引导去用户性格页
 const fortuneNoPersona = ref(false)
 
 const signLabels: Record<string, string> = {
@@ -106,7 +106,10 @@ onMounted(() => load())
       <article class="card summary-card" :class="{ pending: fortune?.generating }">
         <div class="summary-header"><h2>今日运势<template v-if="fortune"> · {{ signName(fortune.sign) }}</template></h2><time v-if="fortune" class="muted">{{ fortune.date }}</time></div>
         <p v-if="fortuneLoading" class="muted">正在读取今日运势…</p>
-        <p v-else-if="fortuneNoPersona" class="muted">该设备尚未配置星座人设，请先到「人设」页完成设置后再查看运势。</p>
+        <p v-else-if="fortuneNoPersona" class="muted">
+          还没有你的太阳星座，日运不会沿用星仔的星座。
+          <RouterLink :to="{ name: 'owner' }">去用户性格页设置</RouterLink>
+        </p>
         <p v-else-if="fortuneError" class="error-msg">{{ fortuneError }}</p>
         <template v-else-if="fortune">
           <p v-if="fortune.greeting" class="summary">{{ fortune.greeting }}</p>
@@ -138,5 +141,5 @@ onMounted(() => load())
 </template>
 
 <style scoped>
-.page-heading,.summary-header,.section{display:flex;align-items:center;justify-content:space-between;gap:12px}.page-heading .page-title{margin:4px 0}.text-button{border:0;background:none;color:var(--color-primary);cursor:pointer}.text-button:disabled{opacity:.5}.summary-card{display:flex;flex-direction:column;gap:12px}.summary-card h2{margin:0;font-size:16px}.summary-header time{font-size:12px;text-align:right}.summary{margin:0;line-height:1.65;white-space:pre-wrap}.section{align-items:flex-start}.section strong{text-align:right}.section ul{margin:0;padding-left:20px;line-height:1.7}.chips{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;margin:0}.chips span{background:var(--color-primary-light);color:var(--color-primary);border-radius:99px;padding:3px 8px;font-size:12px}.pending{border-style:dashed}.fortune-row{display:flex;gap:10px;align-items:baseline}.fortune-label{flex:none;color:var(--color-primary);font-size:13px}.fortune-text{margin:0;line-height:1.65}.fortune-subtitle{margin:4px 0 0;font-size:14px}.empty{min-height:180px}.error-msg{margin:0;color:#d63031;font-size:13px}
+.page-heading,.summary-header,.section{display:flex;align-items:center;justify-content:space-between;gap:12px}.page-heading .page-title{margin:4px 0}.text-button{border:0;background:none;color:var(--color-primary);cursor:pointer}.text-button:disabled{opacity:.5}.summary-card{display:flex;flex-direction:column;gap:12px}.summary-card h2{margin:0;font-size:16px}.summary-header time{font-size:12px;text-align:right}.summary{margin:0;line-height:1.65;white-space:pre-wrap}.section{align-items:flex-start}.section strong{text-align:right}.section ul{margin:0;padding-left:20px;line-height:1.7}.chips{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;margin:0}.chips span{background:var(--color-primary-light);color:var(--color-primary);border-radius:99px;padding:3px 8px;font-size:12px}.pending{border-style:dashed}.fortune-row{display:flex;gap:10px;align-items:baseline}.fortune-label{flex:none;color:var(--color-primary);font-size:13px}.fortune-text{margin:0;line-height:1.65}.fortune-subtitle{margin:4px 0 0;font-size:14px}.empty{min-height:180px}.error-msg{margin:0;color:#d63031;font-size:13px}.muted a{color:var(--color-primary);text-decoration:none}
 </style>

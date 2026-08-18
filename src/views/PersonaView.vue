@@ -4,11 +4,11 @@ import { useRoute } from 'vue-router'
 import axios from 'axios'
 import http from '../api/http'
 import { buildPersonaPayload, linesToList } from '../api/persona'
-import type { AnalysisResult, BaziProfile, PersonaProfile, QuestionnaireOut } from '../api/types'
+import type { AnalysisResult, PersonaProfile } from '../api/types'
 import { useDeviceStore } from '../stores/devices'
 
-// P3 人设设置：星座 × MBTI × 忌口 × 钉扎。
-// 当前已发布最小种子为双鱼、INFP/ISFP，其余选项待 KB 发布后由后端开放。
+// P3 宠物性格：只编辑这只宠物的星座 × MBTI × 忌口 × 钉扎。
+// 用户性格测试和主人生辰在 /owner，避免和「主人人设」搞混。
 const zodiacs = [
   { key: 'aries', label: '白羊座' }, { key: 'taurus', label: '金牛座' },
   { key: 'gemini', label: '双子座' }, { key: 'cancer', label: '巨蟹座' },
@@ -43,32 +43,12 @@ const errorMsg = ref('')
 const loading = ref(false)
 const saving = ref(false)
 
-// A10 问卷：只展示后端题面并提交 a/b，不算型、不替代直选
-const quizOpen = ref(false)
-const quiz = ref<QuestionnaireOut | null>(null)
-const quizAnswers = ref<string[]>([])
-const quizLoading = ref(false)
-const quizSaving = ref(false)
-const quizError = ref('')
-const quizTip = ref('')
-
 // D5 成长建议卡：服务端 persona_growth 分析产物（契约见 backend docs/06）
 const growth = ref<AnalysisResult | null>(null)
 const growthLoading = ref(false)
 const growthError = ref('')
 const applying = ref(false)
 const applyTip = ref('')
-
-// D7 主人八字（E10）：独立卡片读写 /devices/{id}/bazi；未录入 GET 404 视为空表单
-const baziCalendar = ref<'solar' | 'lunar'>('solar')
-const baziDate = ref('')
-const baziTime = ref('')
-const baziTimeUnknown = ref(false)
-const baziPlace = ref('')
-const baziGender = ref('')
-const baziSaving = ref(false)
-const baziError = ref('')
-const baziTip = ref('')
 
 const selectedMbti = computed(() => `${mbti.value.EI}${mbti.value.SN}${mbti.value.TF}${mbti.value.JP}`)
 
@@ -126,7 +106,7 @@ async function loadPersona() {
     applyProfile(data)
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) return
-    errorMsg.value = '加载人设失败，请稍后重试'
+    errorMsg.value = '加载宠物性格失败，请稍后重试'
   } finally {
     loading.value = false
   }
@@ -147,7 +127,7 @@ async function save() {
     savedTip.value = '已保存，下次和宠物说话时生效'
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 422) {
-      errorMsg.value = '人设组合暂不可用，请检查选择后重试'
+      errorMsg.value = '性格组合暂不可用，请检查选择后重试'
     } else {
       errorMsg.value = '保存失败，请稍后重试'
     }
@@ -176,7 +156,7 @@ async function loadGrowth() {
 // 应用建议：二次确认后由后端把 suggested_overrides 合并进设备私有 overrides
 async function applyGrowth() {
   if (!deviceId.value || !growth.value || applying.value) return
-  if (!window.confirm('确认应用这份成长建议吗？建议内容将合并到当前设备的人设中。')) return
+  if (!window.confirm('确认应用这份成长建议吗？建议内容将合并到当前设备的宠物性格中。')) return
   applying.value = true
   growthError.value = ''
   applyTip.value = ''
@@ -185,13 +165,13 @@ async function applyGrowth() {
       `/devices/${deviceId.value}/analyses/${growth.value.id}/apply-persona-growth`
     )
     applyTip.value = '已应用，下次和宠物说话时生效'
-    // 应用会改写 overrides，需同时刷新人设表单与建议卡状态
+    // 应用会改写 overrides，需同时刷新宠物性格表单与建议卡状态
     await Promise.all([loadPersona(), loadGrowth()])
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
       growthError.value = '该建议已失效，请刷新后重试'
     } else if (axios.isAxiosError(error) && error.response?.status === 409) {
-      growthError.value = '该建议暂无可应用内容，或尚未保存人设'
+      growthError.value = '该建议暂无可应用内容，或尚未保存宠物性格'
     } else {
       growthError.value = '应用失败，请稍后重试'
     }
@@ -200,148 +180,41 @@ async function applyGrowth() {
   }
 }
 
-async function loadQuiz() {
-  if (!deviceId.value || quizLoading.value) return
-  quizLoading.value = true
-  quizError.value = ''
-  try {
-    const { data } = await http.get<QuestionnaireOut>(`/devices/${deviceId.value}/persona/questionnaire`)
-    quiz.value = data
-    quizAnswers.value = Array.from({ length: data.answers_required }, (_, index) => quizAnswers.value[index] || '')
-  } catch {
-    quizError.value = '加载问卷失败，请稍后重试'
-  } finally {
-    quizLoading.value = false
-  }
-}
-
-async function openQuiz() {
-  quizOpen.value = !quizOpen.value
-  quizTip.value = ''
-  if (quizOpen.value && !quiz.value) await loadQuiz()
-}
-
-function setQuizAnswer(index: number, choice: string) {
-  const next = [...quizAnswers.value]
-  next[index] = choice
-  quizAnswers.value = next
-}
-
-async function submitQuiz() {
-  if (!deviceId.value || !quiz.value) return
-  if (!zodiac.value && !loadedProfile.value?.sun_sign) {
-    quizError.value = '尚未配置人设时请先选择星座，再提交问卷'
-    return
-  }
-  if (quizAnswers.value.length !== quiz.value.answers_required || quizAnswers.value.some((item) => item !== 'a' && item !== 'b')) {
-    quizError.value = `请答完 ${quiz.value.answers_required} 题（每题选 A 或 B）`
-    return
-  }
-  quizSaving.value = true
-  quizError.value = ''
-  quizTip.value = ''
-  const payload = currentPayload()
-  try {
-    const { data } = await http.post<PersonaProfile>(`/devices/${deviceId.value}/persona/questionnaire`, {
-      answers: quizAnswers.value,
-      sun_sign: zodiac.value || undefined,
-      overrides: payload.overrides,
-      follow_latest: payload.follow_latest,
-      dossier: payload.dossier
-    })
-    applyProfile(data)
-    quizTip.value = `后端已算出 MBTI：${data.mbti ?? ''}。已写入人设，下次和宠物说话时生效。`
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status === 422) {
-      quizError.value = '请先选择星座，并确保 20 题都选了 A 或 B'
-    } else {
-      quizError.value = '提交问卷失败，请稍后重试'
-    }
-  } finally {
-    quizSaving.value = false
-  }
+function scrollToId(id: string) {
+  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
 async function loadPage() {
-  await Promise.all([loadPersona(), loadGrowth(), loadBazi()])
+  await Promise.all([loadPersona(), loadGrowth()])
 }
 
 onMounted(loadPage)
-
-function applyBazi(profile: BaziProfile) {
-  baziCalendar.value = profile.calendar_type === 'lunar' ? 'lunar' : 'solar'
-  baziDate.value = profile.birth_date
-  // 响应 birth_time 序列化为 HH:MM:SS，input[type=time] 只认 HH:MM
-  const time = profile.birth_time ?? ''
-  baziTimeUnknown.value = !time
-  baziTime.value = time.slice(0, 5)
-  baziPlace.value = profile.birth_place ?? ''
-  baziGender.value = profile.gender ?? ''
-}
-
-// 未录入时 GET 返回 404，按契约视为空表单，不报错
-async function loadBazi() {
-  if (!deviceId.value) return
-  baziError.value = ''
-  try {
-    const { data } = await http.get<BaziProfile>(`/devices/${deviceId.value}/bazi`)
-    applyBazi(data)
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status === 404) return
-    baziError.value = '加载八字失败，请稍后重试'
-  }
-}
-
-async function saveBazi() {
-  if (!deviceId.value) return
-  if (!baziDate.value) {
-    baziError.value = '请选择出生日期'
-    return
-  }
-  if (!baziTimeUnknown.value && !baziTime.value) {
-    baziError.value = '请选择出生时辰，或勾选「时辰未知」'
-    return
-  }
-  baziSaving.value = true
-  baziError.value = ''
-  baziTip.value = ''
-  const payload: BaziProfile = {
-    calendar_type: baziCalendar.value,
-    birth_date: baziDate.value,
-    birth_time: baziTimeUnknown.value ? null : baziTime.value,
-    birth_place: baziPlace.value.trim() || null,
-    gender: baziGender.value || null
-  }
-  try {
-    const { data } = await http.put<BaziProfile>(`/devices/${deviceId.value}/bazi`, payload)
-    applyBazi(data)
-    baziTip.value = '已保存，可到日运页查看今日八字运势（生成需要一点时间）'
-  } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status === 422) {
-      baziError.value = '出生信息格式有误，请检查后重试'
-    } else {
-      baziError.value = '保存失败，请稍后重试'
-    }
-  } finally {
-    baziSaving.value = false
-  }
-}
 
 </script>
 
 <template>
   <div class="page">
-    <h1 class="page-title">人设设置</h1>
+    <h1 class="page-title">宠物性格</h1>
+    <p class="muted">给星仔选星座和性格。你自己的测试在「用户性格」，不要和这里搞混。</p>
+    <nav class="jump-nav" aria-label="快捷跳转">
+      <button class="jump-chip" type="button" @click="scrollToId('pet-zodiac')">星座</button>
+      <button class="jump-chip" type="button" @click="scrollToId('pet-mbti')">性格</button>
+      <button class="jump-chip" type="button" @click="scrollToId('pet-taboo')">忌口</button>
+      <button class="jump-chip" type="button" @click="scrollToId('pet-growth')">成长建议</button>
+      <RouterLink class="jump-chip" :to="{ name: 'owner', hash: '#quiz' }">用户性格测试</RouterLink>
+      <RouterLink class="jump-chip" :to="{ name: 'tests' }">趣味测试</RouterLink>
+      <RouterLink class="jump-chip" :to="{ name: 'star' }">星仔档案</RouterLink>
+    </nav>
     <div v-if="!deviceId" class="placeholder-block empty">
-      请先在绑定成功后进入本页设置人设。
+      请先在绑定成功后进入本页设置宠物性格。
     </div>
     <template v-else>
-      <p v-if="loading" class="muted">正在加载人设…</p>
+      <p v-if="loading" class="muted">正在加载宠物性格…</p>
       <p class="muted">当前设备 ID：{{ deviceId }}</p>
 
     <!-- 星座：12 宫格单选 -->
-    <div class="card">
-      <h2 class="section-title">星座</h2>
+    <div id="pet-zodiac" class="card jump-anchor">
+      <h2 class="section-title">星仔星座</h2>
       <div class="zodiac-grid">
         <button
           v-for="z in zodiacs"
@@ -357,8 +230,8 @@ async function saveBazi() {
     </div>
 
     <!-- MBTI：四维行选 -->
-    <div class="card">
-      <h2 class="section-title">MBTI</h2>
+    <div id="pet-mbti" class="card jump-anchor">
+      <h2 class="section-title">星仔性格</h2>
       <div v-for="dim in mbtiDims" :key="dim.key" class="mbti-row">
         <span class="muted">{{ dim.label }}</span>
         <div class="mbti-options">
@@ -376,58 +249,8 @@ async function saveBazi() {
       </div>
     </div>
 
-    <!-- A10 问卷：后端计分，不替代上方直选 -->
-    <div class="card quiz-card">
-      <div class="quiz-header">
-        <div>
-          <h2 class="section-title">用问卷测 MBTI</h2>
-          <p class="muted">20 题由后端出题并计分，结果会写回上面的四维选择。直选仍然可用。</p>
-        </div>
-        <button class="btn-ghost" type="button" :disabled="quizLoading" @click="openQuiz">
-          {{ quizOpen ? '收起问卷' : (quizLoading ? '加载中…' : '开始问卷') }}
-        </button>
-      </div>
-      <template v-if="quizOpen">
-        <p v-if="quizLoading" class="muted">正在加载题面…</p>
-        <ol v-else-if="quiz" class="quiz-list">
-          <li v-for="(question, index) in quiz.questions" :key="question.id" class="quiz-item">
-            <p class="quiz-prompt">{{ index + 1 }}. {{ question.prompt }}</p>
-            <div class="quiz-options">
-              <button
-                type="button"
-                class="quiz-choice"
-                :class="{ active: quizAnswers[index] === 'a' }"
-                @click="setQuizAnswer(index, 'a')"
-              >
-                A. {{ question.a }}
-              </button>
-              <button
-                type="button"
-                class="quiz-choice"
-                :class="{ active: quizAnswers[index] === 'b' }"
-                @click="setQuizAnswer(index, 'b')"
-              >
-                B. {{ question.b }}
-              </button>
-            </div>
-          </li>
-        </ol>
-        <button
-          v-if="quiz"
-          class="btn-primary"
-          type="button"
-          :disabled="quizSaving"
-          @click="submitQuiz"
-        >
-          {{ quizSaving ? '提交中…' : '提交问卷' }}
-        </button>
-        <p v-if="quizTip" class="muted">{{ quizTip }}</p>
-        <p v-if="quizError" class="error-msg">{{ quizError }}</p>
-      </template>
-    </div>
-
     <!-- 忌口：多行文本 -->
-    <div class="card">
+    <div id="pet-taboo" class="card jump-anchor">
       <h2 class="section-title">忌口（宠物不要提的话题）</h2>
       <textarea
         v-model="taboo"
@@ -440,7 +263,7 @@ async function saveBazi() {
     <!-- 钉扎开关：置顶当前人设，不跟随知识库更新 -->
     <div class="card pin-row">
       <div>
-        <h2 class="section-title">钉扎人设</h2>
+        <h2 class="section-title">钉扎性格</h2>
         <p class="muted">开启后不跟随知识库自动更新</p>
       </div>
       <label class="switch">
@@ -449,64 +272,8 @@ async function saveBazi() {
       </label>
     </div>
 
-    <!-- D7 主人八字（E10）：独立卡片独立保存，读写 /devices/{id}/bazi -->
-    <div class="card bazi-card">
-      <h2 class="section-title">主人八字</h2>
-      <p class="muted">用于生成每日八字运势，仅自己可见</p>
-      <div class="bazi-row">
-        <span class="muted">历法</span>
-        <div class="bazi-options">
-          <button
-            type="button"
-            class="mbti-item bazi-item"
-            :class="{ active: baziCalendar === 'solar' }"
-            @click="baziCalendar = 'solar'"
-          >
-            阳历
-          </button>
-          <button
-            type="button"
-            class="mbti-item bazi-item"
-            :class="{ active: baziCalendar === 'lunar' }"
-            @click="baziCalendar = 'lunar'"
-          >
-            阴历
-          </button>
-        </div>
-      </div>
-      <label class="bazi-row">
-        <span class="muted">出生日期</span>
-        <input v-model="baziDate" class="input bazi-input" type="date" />
-      </label>
-      <div class="bazi-row">
-        <span class="muted">出生时辰</span>
-        <input v-model="baziTime" class="input bazi-input" type="time" :disabled="baziTimeUnknown" />
-      </div>
-      <label class="bazi-row bazi-checkbox">
-        <input v-model="baziTimeUnknown" type="checkbox" />
-        <span class="muted">时辰未知</span>
-      </label>
-      <label class="bazi-row">
-        <span class="muted">出生地</span>
-        <input v-model="baziPlace" class="input bazi-input" type="text" maxlength="128" placeholder="选填，例如：北京" />
-      </label>
-      <label class="bazi-row">
-        <span class="muted">性别</span>
-        <select v-model="baziGender" class="input bazi-input">
-          <option value="">不便透露</option>
-          <option value="female">女</option>
-          <option value="male">男</option>
-        </select>
-      </label>
-      <p v-if="baziError" class="error-msg">{{ baziError }}</p>
-      <button class="btn-primary" type="button" :disabled="baziSaving" @click="saveBazi">
-        {{ baziSaving ? '保存中…' : '保存八字' }}
-      </button>
-      <p v-if="baziTip" class="muted">{{ baziTip }}</p>
-    </div>
-
     <!-- D5 成长建议卡：服务端 persona_growth 分析产物，应用后合并进设备私有 overrides -->
-    <div class="card growth-card">
+    <div id="pet-growth" class="card growth-card jump-anchor">
       <div class="growth-header">
         <h2 class="section-title">成长建议</h2>
         <span v-if="growthApplied" class="applied-badge">已应用</span>
@@ -542,7 +309,8 @@ async function saveBazi() {
       {{ saving ? '保存中…' : '保存' }}
     </button>
     <p v-if="savedTip" class="muted save-tip">{{ savedTip }}</p>
-    <RouterLink class="star-link" :to="{ name: 'star' }">编辑我的星仔角色档案</RouterLink>
+    <RouterLink class="star-link" :to="{ name: 'star' }">编辑星仔角色档案</RouterLink>
+    <RouterLink class="star-link" :to="{ name: 'owner' }">去测用户性格</RouterLink>
     </template>
   </div>
 </template>
@@ -711,101 +479,12 @@ async function saveBazi() {
   font-size: 13px;
 }
 
-/* D7 主人八字卡 */
-.bazi-card {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.bazi-card > p {
-  margin: 0;
-}
-
-.bazi-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.bazi-input {
-  flex: 1;
-  max-width: 220px;
-}
-
-.bazi-options {
-  display: flex;
-  gap: 8px;
-}
-
-.bazi-item {
-  width: 56px;
-}
-
-.bazi-checkbox {
-  justify-content: flex-start;
-}
-
 .empty {
   min-height: 160px;
 }
 
-.quiz-card,
-.quiz-header,
-.quiz-options {
-  display: flex;
-  gap: 10px;
-}
-
-.quiz-card,
-.quiz-item {
-  flex-direction: column;
-}
-
-.quiz-header {
-  align-items: flex-start;
-  justify-content: space-between;
-}
-
-.quiz-header .section-title,
-.quiz-header p,
-.quiz-prompt {
-  margin: 0;
-}
-
-.quiz-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.quiz-options {
-  flex-direction: column;
-}
-
-.quiz-choice {
-  text-align: left;
-  border: 1px solid var(--color-border);
-  background: #fff;
-  border-radius: 10px;
-  padding: 8px 10px;
-  cursor: pointer;
-  color: var(--color-text);
-  font-size: 14px;
-}
-
-.quiz-choice.active {
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
-  color: var(--color-primary);
-  font-weight: 600;
-}
-
 .star-link {
+  display: block;
   text-align: center;
   color: var(--color-primary);
   text-decoration: none;

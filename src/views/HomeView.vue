@@ -172,7 +172,7 @@ onMounted(loadDevices)
         <p class="muted">知识库：{{ personaSummary.kbVersion }} · {{ personaSummary.followLatest }}</p>
       </template>
       <template v-else>
-        <p class="muted">{{ personaError || '还没有设置人设，先为星仔选一个性格吧。' }}</p>
+        <p class="muted">{{ personaError || '还没有设置宠物性格，先为星仔选一个性格吧。' }}</p>
       </template>
     </section>
 
@@ -220,13 +220,14 @@ onMounted(loadDevices)
         class="btn-ghost entry"
         :to="activeDevice ? { name: 'persona', query: { deviceId: activeDevice.id } } : { name: 'bind' }"
       >
-        {{ activeDevice ? '设置人设' : '先绑定设备' }}
+        {{ activeDevice ? '宠物性格' : '先绑定设备' }}
       </RouterLink>
+      <RouterLink class="btn-ghost entry" :to="{ name: 'owner' }">用户性格</RouterLink>
       <RouterLink class="btn-ghost entry" :to="activeDevice ? { name: 'star' } : { name: 'bind' }">
         我的星仔
       </RouterLink>
       <RouterLink class="btn-ghost entry" :to="{ name: 'daily' }">日运/小记</RouterLink>
-      <RouterLink class="btn-ghost entry" :to="{ name: 'tests' }">测试/星盘</RouterLink>
+      <RouterLink class="btn-ghost entry" :to="{ name: 'tests' }">趣味测试</RouterLink>
       <RouterLink class="btn-ghost entry" :to="{ name: 'peripheral' }">外设状态</RouterLink>
     </div>
   </div>

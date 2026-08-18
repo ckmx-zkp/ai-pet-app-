@@ -66,7 +66,22 @@ export interface PersonaPayload {
   dossier: PersonaDossier
 }
 
-/** GET /devices/{id}/persona/questionnaire 题面（不含计分键） */
+/** 主人档案（GET/PUT /owner）；一账号一份，不写宠物人设 */
+export interface OwnerProfile {
+  subject?: 'owner'
+  user_id: number
+  sun_sign: string | null
+  mbti: string | null
+  quiz_results: Record<string, unknown>
+  updated_at: string | null
+}
+
+export interface OwnerPayload {
+  sun_sign?: string | null
+  mbti?: string | null
+}
+
+/** GET /owner/questionnaire 题面（不含计分键）；测的是主人 */
 export interface QuestionnaireQuestion {
   id: string
   dimension: string
@@ -78,6 +93,7 @@ export interface QuestionnaireQuestion {
 export interface QuestionnaireOut {
   answers_required: number
   questions: QuestionnaireQuestion[]
+  subject?: 'owner'
 }
 
 /** POST /devices/{id}/export 同步 JSON 包 */
