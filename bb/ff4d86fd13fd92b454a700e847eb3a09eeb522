@@ -1,0 +1,37 @@
+src/views/TestsView.vue
+  s_07617d8352a618::t_584f1d6b6f3b08 404-408
+  s_64c87e8c8e0545::t_2cf3c60f525a56 201-208,210-216,218,221,225,248-251,253-255,319-345,347-350,352,354,356-403,409-415
+  s_7b3f24f3766b8f::t_223ea042541b5a 304-307
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "bbff4d86fd13fd92b454a700e847eb3a09eeb522",
+  "prompts": {},
+  "sessions": {
+    "s_07617d8352a618": {
+      "agent_id": {
+        "tool": "mock_ai",
+        "id": "ai-thread-1787053085506260900",
+        "model": "unknown"
+      },
+      "human_author": "kunpeng2.zhang <kunpeng2.zhang@ly.com>"
+    },
+    "s_64c87e8c8e0545": {
+      "agent_id": {
+        "tool": "mock_ai",
+        "id": "ai-thread-1787053030389550000",
+        "model": "unknown"
+      },
+      "human_author": "kunpeng2.zhang <kunpeng2.zhang@ly.com>"
+    },
+    "s_7b3f24f3766b8f": {
+      "agent_id": {
+        "tool": "mock_ai",
+        "id": "ai-thread-1787053045121215800",
+        "model": "unknown"
+      },
+      "human_author": "kunpeng2.zhang <kunpeng2.zhang@ly.com>"
+    }
+  }
+}
