@@ -1,0 +1,106 @@
+src/views/MemoriesView.vue
+  s_a702d44c5dd5a7::t_9be75866da36c2 176-197,224
+  s_96a0e474c6b3d6::t_59db4c62f4fdd3 5,25-56,74-89,96
+src/api/persona.ts
+  s_ade02ef8c29549::t_264badcd5f30e6 1-56
+src/views/PersonaView.vue
+  s_1d89a81dc52e73::t_12327b99ad231f 263,379-428,545,753-813
+  s_07116da0b89144::t_c0c935ab55395b 6-7,36,46-54,102,111-119,145,203-262
+  s_eb774045fc6449::t_d2b591fbde5620 264
+docs/05-对接API与数据流.md
+  s_dc8e805e71f025::t_c0abdae1024f5f 22-23,26,28,58,61-73,90-96
+src/views/StarPetView.vue
+  s_342a82f304dbd0::t_db6b108b5699c0 5
+  s_c542ce449ef000::t_8af49c68b4756d 60-65
+  s_ada4240553a2f0::t_71989611b0f263 1-4,6-59,66-199
+AGENTS.md
+  s_ada4240553a2f0::t_155986606bd849 11,50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "ffd04ae219d07bf0a9811cbc5c9bde7ded572649",
+  "prompts": {},
+  "sessions": {
+    "s_07116da0b89144": {
+      "agent_id": {
+        "tool": "mock_ai",
+        "id": "ai-thread-1787051957148854700",
+        "model": "unknown"
+      },
+      "human_author": "kunpeng2.zhang <kunpeng2.zhang@ly.com>"
+    },
+    "s_1d89a81dc52e73": {
+      "agent_id": {
+        "tool": "mock_ai",
+        "id": "ai-thread-1787051988914387800",
+        "model": "unknown"
+      },
+      "human_author": "kunpeng2.zhang <kunpeng2.zhang@ly.com>"
+    },
+    "s_342a82f304dbd0": {
+      "agent_id": {
+        "tool": "mock_ai",
+        "id": "ai-thread-1787051926512468200",
+        "model": "unknown"
+      },
+      "human_author": "kunpeng2.zhang <kunpeng2.zhang@ly.com>"
+    },
+    "s_96a0e474c6b3d6": {
+      "agent_id": {
+        "tool": "mock_ai",
+        "id": "ai-thread-1787052010357739200",
+        "model": "unknown"
+      },
+      "human_author": "kunpeng2.zhang <kunpeng2.zhang@ly.com>"
+    },
+    "s_a702d44c5dd5a7": {
+      "agent_id": {
+        "tool": "mock_ai",
+        "id": "ai-thread-1787052038351953400",
+        "model": "unknown"
+      },
+      "human_author": "kunpeng2.zhang <kunpeng2.zhang@ly.com>"
+    },
+    "s_ada4240553a2f0": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a01302-988c-7402-9070-52b689d4c5ca",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kunpeng2.zhang <kunpeng2.zhang@ly.com>"
+    },
+    "s_ade02ef8c29549": {
+      "agent_id": {
+        "tool": "mock_ai",
+        "id": "ai-thread-1787051877369893800",
+        "model": "unknown"
+      },
+      "human_author": "kunpeng2.zhang <kunpeng2.zhang@ly.com>"
+    },
+    "s_c542ce449ef000": {
+      "agent_id": {
+        "tool": "mock_ai",
+        "id": "ai-thread-1787051918675473200",
+        "model": "unknown"
+      },
+      "human_author": "kunpeng2.zhang <kunpeng2.zhang@ly.com>"
+    },
+    "s_dc8e805e71f025": {
+      "agent_id": {
+        "tool": "mock_ai",
+        "id": "ai-thread-1787052225138625200",
+        "model": "unknown"
+      },
+      "human_author": "kunpeng2.zhang <kunpeng2.zhang@ly.com>"
+    },
+    "s_eb774045fc6449": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a012ed-0c1b-7c40-9478-ca5dd94206e1",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kunpeng2.zhang <kunpeng2.zhang@ly.com>"
+    }
+  }
+}
