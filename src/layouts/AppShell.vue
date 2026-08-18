@@ -12,7 +12,7 @@ const tabs = [
 <template>
   <div class="shell">
     <nav class="shell-nav">
-      <div class="nav-brand">AI Pet</div>
+      <div class="nav-brand">守护星</div>
       <RouterLink
         v-for="tab in tabs"
         :key="tab.name"

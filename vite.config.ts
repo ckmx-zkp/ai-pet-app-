@@ -10,9 +10,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['pwa.svg'],
       manifest: {
-        name: 'AI Pet',
-        short_name: 'AI Pet',
-        description: 'AI Pet 用户端：绑定设备、设定人设、查看记忆与日运',
+        name: '守护星',
+        short_name: '守护星',
+        description: '守护星：绑定设备、设定人设、查看记忆与日运',
         lang: 'zh-CN',
         start_url: '/',
         display: 'standalone',

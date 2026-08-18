@@ -11,6 +11,7 @@ import DailyView from '../views/DailyView.vue'
 import PeripheralView from '../views/PeripheralView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import TestsView from '../views/TestsView.vue'
+import TestResultView from '../views/TestResultView.vue'
 import StarPetView from '../views/StarPetView.vue'
 
 const router = createRouter({
@@ -30,7 +31,8 @@ const router = createRouter({
         { path: 'daily', name: 'daily', component: DailyView },
         { path: 'peripheral', name: 'peripheral', component: PeripheralView },
         { path: 'profile', name: 'profile', component: ProfileView },
-        { path: 'tests', name: 'tests', component: TestsView }
+        { path: 'tests', name: 'tests', component: TestsView },
+        { path: 'tests/result', name: 'test-result', component: TestResultView }
       ]
     }
   ]

@@ -1,10 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 import http from '../api/http'
 import type { FunQuizDetail, FunQuizListItem, NatalChart, QuizAttempt, ShareCard } from '../api/types'
 import { useDeviceStore } from '../stores/devices'
+import { useQuizSession } from '../stores/quizSession'
 import { downloadBlob, renderSharePoster } from '../utils/poster'
+
+const router = useRouter()
+const quizSession = useQuizSession()
 
 const devices = useDeviceStore()
 const tab = ref<'quiz' | 'chart'>('quiz')
@@ -13,7 +18,6 @@ const listError = ref('')
 const activeQuiz = ref<FunQuizDetail | null>(null)
 const answers = ref<string[]>([])
 const submitting = ref(false)
-const attempt = ref<QuizAttempt | null>(null)
 const shareBusy = ref(false)
 const shareHint = ref('')
 
@@ -61,7 +65,6 @@ async function loadQuizzes() {
 }
 
 async function openQuiz(id: number) {
-  attempt.value = null
   shareHint.value = ''
   const { data } = await http.get<FunQuizDetail>(`/fun-quizzes/${id}`)
   activeQuiz.value = data
@@ -82,28 +85,10 @@ async function submitQuiz() {
       device_id: deviceId.value,
       apply: 'none'
     })
-    attempt.value = data
+    quizSession.setAttempt(data, answers.value)
+    await router.push({ name: 'test-result' })
   } catch (error) {
     shareHint.value = axios.isAxiosError(error) ? '提交失败，请检查是否答完' : '提交失败'
-  } finally {
-    submitting.value = false
-  }
-}
-
-async function saveToPet() {
-  if (!activeQuiz.value || !deviceId.value) {
-    shareHint.value = '请先绑定并选择一只宠物'
-    return
-  }
-  submitting.value = true
-  try {
-    const { data } = await http.post<QuizAttempt>(`/fun-quizzes/${activeQuiz.value.id}/submit`, {
-      answers: answers.value,
-      device_id: deviceId.value,
-      apply: 'memory'
-    })
-    attempt.value = data
-    shareHint.value = '已写成一条记忆，下次对话可能会提到'
   } finally {
     submitting.value = false
   }
@@ -204,7 +189,7 @@ async function computeChart() {
               <h2 class="section-title">{{ activeQuiz.title }}</h2>
               <p class="muted">{{ activeQuiz.subtitle }}</p>
             </div>
-            <button class="text-back" type="button" @click="activeQuiz = null; attempt = null">返回列表</button>
+            <button class="text-back" type="button" @click="activeQuiz = null">返回列表</button>
           </div>
           <div v-for="(question, index) in activeQuiz.questions" :key="question.id" class="q">
             <p class="q-title"><span class="q-num">{{ index + 1 }}</span>{{ question.prompt }}</p>
@@ -222,22 +207,7 @@ async function computeChart() {
           <button class="btn-primary" type="button" :disabled="submitting" @click="submitQuiz">
             {{ submitting ? '提交中…' : '看结果' }}
           </button>
-          <p v-if="shareHint && !attempt" class="error-msg">{{ shareHint }}</p>
-        </div>
-
-        <div v-if="attempt" class="card result">
-          <p class="muted">{{ attempt.share_card.title }}</p>
-          <h2>{{ attempt.result.title }}</h2>
-          <p>{{ attempt.result.summary }}</p>
-          <div class="actions">
-            <button class="btn-primary" type="button" :disabled="shareBusy" @click="savePoster(attempt.share_card, 'ai-pet-quiz.png')">
-              保存海报发朋友圈
-            </button>
-            <button class="btn-ghost" type="button" :disabled="submitting || !deviceId" @click="saveToPet">
-              写成宠物记忆
-            </button>
-          </div>
-          <p v-if="shareHint" class="muted">{{ shareHint }}</p>
+          <p v-if="shareHint" class="error-msg">{{ shareHint }}</p>
         </div>
       </div>
     </template>
@@ -269,7 +239,7 @@ async function computeChart() {
             {{ chart.bodies[key]?.sign_zh }} — {{ chart.bodies[key]?.blurb }}
           </li>
         </ul>
-        <button class="btn-primary" type="button" :disabled="shareBusy" @click="savePoster(chart.share_card, 'ai-pet-natal.png')">
+        <button class="btn-primary" type="button" :disabled="shareBusy" @click="savePoster(chart.share_card, 'shouhuxing-natal.png')">
           保存海报发朋友圈
         </button>
         <p v-if="shareHint" class="muted">{{ shareHint }}</p>

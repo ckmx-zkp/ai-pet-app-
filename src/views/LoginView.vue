@@ -57,7 +57,7 @@ function switchMode() {
 <template>
   <div class="login-page">
     <div class="card login-card">
-      <h1 class="login-title">AI Pet</h1>
+      <h1 class="login-title">守护星</h1>
       <p class="muted">{{ mode === 'login' ? '登录你的账号' : '注册新账号' }}</p>
 
       <form class="login-form" @submit.prevent="submit">
