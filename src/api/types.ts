@@ -25,6 +25,11 @@ export interface Device {
   capabilities?: Record<string, unknown>
 }
 
+/** 设备改名请求（PATCH /devices/{id}）：1–128 字，后端去首尾空白；空串/超长返回 422 */
+export interface DeviceRenamePayload {
+  name: string
+}
+
 /** 登录响应（POST /auth/login，线上已核对） */
 export interface TokenResponse {
   access_token: string
@@ -85,6 +90,34 @@ export interface MemoryPayload {
   title?: string | null
   content: string
   tags: string[]
+}
+
+/** 运势维度（总述 + 事业/财运/学业/感情，E10 契约钉死 5 键） */
+export interface FortuneDimensions {
+  overall: string
+  career: string
+  wealth: string
+  study: string
+  love: string
+}
+
+/** 当日运势聚合（GET /devices/{id}/fortune/daily）；当日内容缺失时对应字段为 null 且 generating=true */
+export interface DailyFortune {
+  date: string
+  sign: string
+  sign_fortune: FortuneDimensions | null
+  greeting: string | null
+  bazi_fortune: FortuneDimensions | null
+  generating: boolean
+}
+
+/** 主人八字（GET/PUT /devices/{id}/bazi，E10）；时辰/出生地/性别可空，响应 birth_time 序列化为 HH:MM:SS */
+export interface BaziProfile {
+  calendar_type: 'solar' | 'lunar'
+  birth_date: string
+  birth_time: string | null
+  birth_place: string | null
+  gender: string | null
 }
 
 /** 用户侧离线分析结果（GET /devices/{id}/analyses） */

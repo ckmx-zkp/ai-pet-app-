@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import axios from 'axios'
 import http from '../api/http'
-import type { PersonaProfile } from '../api/types'
+import type { Device, PersonaProfile } from '../api/types'
 import { useDeviceStore } from '../stores/devices'
 
 const devices = useDeviceStore()
@@ -12,6 +12,11 @@ const persona = ref<PersonaProfile | null>(null)
 const personaLoading = ref(false)
 const personaError = ref('')
 const activeDevice = computed(() => devices.activeDevice)
+// 设备行内改名/解绑状态
+const renamingId = ref<number | null>(null)
+const renameName = ref('')
+const renameSaving = ref(false)
+const deviceActionError = ref('')
 
 const zodiacLabels: Record<string, string> = {
   aries: '白羊座', taurus: '金牛座', gemini: '双子座', cancer: '巨蟹座',
@@ -71,6 +76,61 @@ async function selectDevice(deviceId: number) {
   await loadPersona()
 }
 
+function startRename(device: Device) {
+  deviceActionError.value = ''
+  renamingId.value = device.id
+  renameName.value = device.name ?? ''
+}
+
+function cancelRename() {
+  renamingId.value = null
+  renameName.value = ''
+}
+
+// 行内改名：PATCH /devices/{id}；404=设备不存在或已解绑，422=名称不合法（契约：1–128 字）
+async function submitRename(deviceId: number) {
+  const name = renameName.value.trim()
+  if (!name || name.length > 128) {
+    deviceActionError.value = '名称需为 1–128 个字符'
+    return
+  }
+  renameSaving.value = true
+  deviceActionError.value = ''
+  try {
+    await devices.renameDevice(deviceId, name)
+    cancelRename()
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      deviceActionError.value = '设备不存在或已解绑，请刷新列表'
+    } else if (axios.isAxiosError(error) && error.response?.status === 422) {
+      deviceActionError.value = '名称不合法，需为 1–128 个字符'
+    } else {
+      deviceActionError.value = '改名失败，请稍后重试'
+    }
+  } finally {
+    renameSaving.value = false
+  }
+}
+
+// 解绑：DELETE /devices/{id}，二次确认；解绑仅解除归属，历史保留、设备可重绑
+async function unbindDevice(device: Device) {
+  const label = device.name || device.device_uid
+  if (!window.confirm(`确认解绑「${label}」吗？解绑仅解除归属，历史数据保留，设备可重新绑定。`)) return
+  deviceActionError.value = ''
+  try {
+    await devices.removeDevice(device.id)
+    if (renamingId.value === device.id) cancelRename()
+    // 当前设备可能已切换或清空，刷新人设摘要
+    await loadPersona()
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      deviceActionError.value = '设备不存在或已解绑，请刷新列表'
+    } else {
+      deviceActionError.value = '解绑失败，请稍后重试'
+    }
+  }
+}
+
 onMounted(loadDevices)
 </script>
 
@@ -115,17 +175,36 @@ onMounted(loadDevices)
         <h2>我的设备</h2>
         <button class="refresh-button" type="button" :disabled="loading" @click="loadDevices">刷新</button>
       </div>
-      <button
-        v-for="device in devices.devices"
-        :key="device.id"
-        class="device-item"
-        :class="{ active: device.id === devices.activeDeviceId }"
-        type="button"
-        @click="selectDevice(device.id)"
-      >
-        <span>{{ device.name || device.device_uid }}</span>
-        <span class="muted">{{ device.online ? '在线' : '离线' }}</span>
-      </button>
+      <div v-for="device in devices.devices" :key="device.id" class="device-row">
+        <template v-if="renamingId === device.id">
+          <input
+            v-model="renameName"
+            class="input rename-input"
+            type="text"
+            maxlength="128"
+            placeholder="输入新名称（1–128 字）"
+            @keyup.enter="submitRename(device.id)"
+          />
+          <button class="row-action" type="button" :disabled="renameSaving" @click="submitRename(device.id)">
+            {{ renameSaving ? '保存中…' : '保存' }}
+          </button>
+          <button class="row-action" type="button" :disabled="renameSaving" @click="cancelRename">取消</button>
+        </template>
+        <template v-else>
+          <button
+            class="device-item"
+            :class="{ active: device.id === devices.activeDeviceId }"
+            type="button"
+            @click="selectDevice(device.id)"
+          >
+            <span>{{ device.name || device.device_uid }}</span>
+            <span class="muted">{{ device.online ? '在线' : '离线' }}</span>
+          </button>
+          <button class="row-action" type="button" @click="startRename(device)">改名</button>
+          <button class="row-action danger" type="button" @click="unbindDevice(device)">解绑</button>
+        </template>
+      </div>
+      <p v-if="deviceActionError" class="error-msg">{{ deviceActionError }}</p>
     </div>
 
     <!-- 功能入口 -->
@@ -250,5 +329,35 @@ onMounted(loadDevices)
 .device-item.active {
   border-color: var(--color-primary);
   background: var(--color-primary-light);
+}
+
+.device-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.device-row .device-item {
+  flex: 1;
+  min-width: 0;
+}
+
+.rename-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.row-action {
+  flex: none;
+  border: 0;
+  background: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px;
+}
+
+.row-action.danger {
+  color: #d63031;
 }
 </style>

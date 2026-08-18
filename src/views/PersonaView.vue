@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import axios from 'axios'
 import http from '../api/http'
-import type { PersonaPayload, PersonaProfile } from '../api/types'
+import type { AnalysisResult, BaziProfile, PersonaPayload, PersonaProfile } from '../api/types'
 import { useDeviceStore } from '../stores/devices'
 
 // P3 人设设置：星座 × MBTI × 忌口 × 钉扎。
@@ -41,7 +41,51 @@ const errorMsg = ref('')
 const loading = ref(false)
 const saving = ref(false)
 
+// D5 成长建议卡：服务端 persona_growth 分析产物（契约见 backend docs/06）
+const growth = ref<AnalysisResult | null>(null)
+const growthLoading = ref(false)
+const growthError = ref('')
+const applying = ref(false)
+const applyTip = ref('')
+
+// D7 主人八字（E10）：独立卡片读写 /devices/{id}/bazi；未录入 GET 404 视为空表单
+const baziCalendar = ref<'solar' | 'lunar'>('solar')
+const baziDate = ref('')
+const baziTime = ref('')
+const baziTimeUnknown = ref(false)
+const baziPlace = ref('')
+const baziGender = ref('')
+const baziSaving = ref(false)
+const baziError = ref('')
+const baziTip = ref('')
+
 const selectedMbti = computed(() => `${mbti.value.EI}${mbti.value.SN}${mbti.value.TF}${mbti.value.JP}`)
+
+function textValue(payload: Record<string, unknown>, key: string) {
+  const value = payload[key]
+  return typeof value === 'string' && value.trim() ? value : ''
+}
+
+function listValue(payload: Record<string, unknown>, key: string) {
+  const value = payload[key]
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && Boolean(item.trim())) : []
+}
+
+const growthSummary = computed(() => (growth.value ? textValue(growth.value.payload, 'summary') : ''))
+const growthEvidence = computed(() => (growth.value ? listValue(growth.value.payload, 'evidence') : []))
+const growthApplied = computed(() => growth.value?.payload.applied === true)
+const growthOverrides = computed(() => {
+  const value = growth.value?.payload.suggested_overrides
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return []
+  return Object.entries(value as Record<string, unknown>).map(([key, item]) => ({
+    key,
+    value: typeof item === 'string' ? item : JSON.stringify(item)
+  }))
+})
+
+function formatTime(value: string) {
+  return new Date(value).toLocaleString('zh-CN', { hour12: false })
+}
 
 function applyProfile(profile: PersonaProfile) {
   zodiac.value = profile.sun_sign ?? ''
@@ -98,6 +142,116 @@ async function save() {
 }
 
 onMounted(loadPersona)
+
+// 读取最近一条 persona_growth 建议（按 created_at 倒序，取第一条）
+async function loadGrowth() {
+  if (!deviceId.value) return
+  growthLoading.value = true
+  growthError.value = ''
+  try {
+    const { data } = await http.get<AnalysisResult[]>(`/devices/${deviceId.value}/analyses`, {
+      params: { kind: 'persona_growth', limit: 1, offset: 0 }
+    })
+    growth.value = data[0] ?? null
+  } catch {
+    growthError.value = '加载成长建议失败，请稍后重试'
+  } finally {
+    growthLoading.value = false
+  }
+}
+
+// 应用建议：二次确认后由后端把 suggested_overrides 合并进设备私有 overrides
+async function applyGrowth() {
+  if (!deviceId.value || !growth.value || applying.value) return
+  if (!window.confirm('确认应用这份成长建议吗？建议内容将合并到当前设备的人设中。')) return
+  applying.value = true
+  growthError.value = ''
+  applyTip.value = ''
+  try {
+    await http.post<AnalysisResult>(
+      `/devices/${deviceId.value}/analyses/${growth.value.id}/apply-persona-growth`
+    )
+    applyTip.value = '已应用，下次和宠物说话时生效'
+    // 应用会改写 overrides，需同时刷新人设表单与建议卡状态
+    await Promise.all([loadPersona(), loadGrowth()])
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      growthError.value = '该建议已失效，请刷新后重试'
+    } else if (axios.isAxiosError(error) && error.response?.status === 409) {
+      growthError.value = '该建议暂无可应用内容，或尚未保存人设'
+    } else {
+      growthError.value = '应用失败，请稍后重试'
+    }
+  } finally {
+    applying.value = false
+  }
+}
+
+async function loadPage() {
+  await Promise.all([loadPersona(), loadGrowth(), loadBazi()])
+}
+
+onMounted(loadPage)
+
+function applyBazi(profile: BaziProfile) {
+  baziCalendar.value = profile.calendar_type === 'lunar' ? 'lunar' : 'solar'
+  baziDate.value = profile.birth_date
+  // 响应 birth_time 序列化为 HH:MM:SS，input[type=time] 只认 HH:MM
+  const time = profile.birth_time ?? ''
+  baziTimeUnknown.value = !time
+  baziTime.value = time.slice(0, 5)
+  baziPlace.value = profile.birth_place ?? ''
+  baziGender.value = profile.gender ?? ''
+}
+
+// 未录入时 GET 返回 404，按契约视为空表单，不报错
+async function loadBazi() {
+  if (!deviceId.value) return
+  baziError.value = ''
+  try {
+    const { data } = await http.get<BaziProfile>(`/devices/${deviceId.value}/bazi`)
+    applyBazi(data)
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) return
+    baziError.value = '加载八字失败，请稍后重试'
+  }
+}
+
+async function saveBazi() {
+  if (!deviceId.value) return
+  if (!baziDate.value) {
+    baziError.value = '请选择出生日期'
+    return
+  }
+  if (!baziTimeUnknown.value && !baziTime.value) {
+    baziError.value = '请选择出生时辰，或勾选「时辰未知」'
+    return
+  }
+  baziSaving.value = true
+  baziError.value = ''
+  baziTip.value = ''
+  const payload: BaziProfile = {
+    calendar_type: baziCalendar.value,
+    birth_date: baziDate.value,
+    birth_time: baziTimeUnknown.value ? null : baziTime.value,
+    birth_place: baziPlace.value.trim() || null,
+    gender: baziGender.value || null
+  }
+  try {
+    const { data } = await http.put<BaziProfile>(`/devices/${deviceId.value}/bazi`, payload)
+    applyBazi(data)
+    baziTip.value = '已保存，可到日运页查看今日八字运势（生成需要一点时间）'
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 422) {
+      baziError.value = '出生信息格式有误，请检查后重试'
+    } else {
+      baziError.value = '保存失败，请稍后重试'
+    }
+  } finally {
+    baziSaving.value = false
+  }
+}
+
 </script>
 
 <template>
@@ -168,6 +322,94 @@ onMounted(loadPersona)
         <input v-model="pinned" type="checkbox" />
         <span class="slider"></span>
       </label>
+    </div>
+
+    <!-- D7 主人八字（E10）：独立卡片独立保存，读写 /devices/{id}/bazi -->
+    <div class="card bazi-card">
+      <h2 class="section-title">主人八字</h2>
+      <p class="muted">用于生成每日八字运势，仅自己可见</p>
+      <div class="bazi-row">
+        <span class="muted">历法</span>
+        <div class="bazi-options">
+          <button
+            type="button"
+            class="mbti-item bazi-item"
+            :class="{ active: baziCalendar === 'solar' }"
+            @click="baziCalendar = 'solar'"
+          >
+            阳历
+          </button>
+          <button
+            type="button"
+            class="mbti-item bazi-item"
+            :class="{ active: baziCalendar === 'lunar' }"
+            @click="baziCalendar = 'lunar'"
+          >
+            阴历
+          </button>
+        </div>
+      </div>
+      <label class="bazi-row">
+        <span class="muted">出生日期</span>
+        <input v-model="baziDate" class="input bazi-input" type="date" />
+      </label>
+      <div class="bazi-row">
+        <span class="muted">出生时辰</span>
+        <input v-model="baziTime" class="input bazi-input" type="time" :disabled="baziTimeUnknown" />
+      </div>
+      <label class="bazi-row bazi-checkbox">
+        <input v-model="baziTimeUnknown" type="checkbox" />
+        <span class="muted">时辰未知</span>
+      </label>
+      <label class="bazi-row">
+        <span class="muted">出生地</span>
+        <input v-model="baziPlace" class="input bazi-input" type="text" maxlength="128" placeholder="选填，例如：北京" />
+      </label>
+      <label class="bazi-row">
+        <span class="muted">性别</span>
+        <select v-model="baziGender" class="input bazi-input">
+          <option value="">不便透露</option>
+          <option value="female">女</option>
+          <option value="male">男</option>
+        </select>
+      </label>
+      <p v-if="baziError" class="error-msg">{{ baziError }}</p>
+      <button class="btn-primary" type="button" :disabled="baziSaving" @click="saveBazi">
+        {{ baziSaving ? '保存中…' : '保存八字' }}
+      </button>
+      <p v-if="baziTip" class="muted">{{ baziTip }}</p>
+    </div>
+
+    <!-- D5 成长建议卡：服务端 persona_growth 分析产物，应用后合并进设备私有 overrides -->
+    <div class="card growth-card">
+      <div class="growth-header">
+        <h2 class="section-title">成长建议</h2>
+        <span v-if="growthApplied" class="applied-badge">已应用</span>
+      </div>
+      <p v-if="growthLoading" class="muted">正在加载成长建议…</p>
+      <template v-else-if="growth && growthSummary">
+        <p class="growth-summary">{{ growthSummary }}</p>
+        <p class="muted growth-time">生成于 {{ formatTime(growth.created_at) }}</p>
+        <div v-if="growthOverrides.length" class="growth-overrides">
+          <span class="muted">建议调整</span>
+          <p v-for="item in growthOverrides" :key="item.key" class="muted">{{ item.key }}：{{ item.value }}</p>
+        </div>
+        <ul v-if="growthEvidence.length" class="growth-evidence">
+          <li v-for="item in growthEvidence" :key="item">{{ item }}</li>
+        </ul>
+        <button
+          v-if="!growthApplied && growthOverrides.length"
+          class="btn-ghost"
+          type="button"
+          :disabled="applying"
+          @click="applyGrowth"
+        >
+          {{ applying ? '应用中…' : '应用建议' }}
+        </button>
+        <p v-if="applyTip" class="muted">{{ applyTip }}</p>
+      </template>
+      <p v-else class="muted">暂时还没有成长建议。和宠物多聊聊，服务端会基于会话内容生成建议。</p>
+      <p v-if="growthError" class="error-msg">{{ growthError }}</p>
     </div>
 
     <p v-if="errorMsg" class="error-msg">{{ errorMsg }}</p>
@@ -289,10 +531,94 @@ onMounted(loadPersona)
   text-align: center;
 }
 
+/* D5 成长建议卡 */
+.growth-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.growth-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.growth-header .section-title {
+  margin: 0;
+}
+
+.applied-badge {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-radius: 99px;
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+.growth-summary {
+  margin: 0;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.growth-time {
+  margin: 0;
+  font-size: 12px;
+}
+
+.growth-overrides p {
+  margin: 2px 0 0;
+  font-size: 13px;
+}
+
+.growth-evidence {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.7;
+  font-size: 13px;
+}
+
 .error-msg {
   margin: 0;
   color: #d63031;
   font-size: 13px;
+}
+
+/* D7 主人八字卡 */
+.bazi-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bazi-card > p {
+  margin: 0;
+}
+
+.bazi-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.bazi-input {
+  flex: 1;
+  max-width: 220px;
+}
+
+.bazi-options {
+  display: flex;
+  gap: 8px;
+}
+
+.bazi-item {
+  width: 56px;
+}
+
+.bazi-checkbox {
+  justify-content: flex-start;
 }
 
 .empty {
