@@ -1,0 +1,19 @@
+AGENTS.md
+  s_eb774045fc6449::t_f67ba9c83df896 11,50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "6ab6a977cfc2408f560c6f26b5f8238920b6a981",
+  "prompts": {},
+  "sessions": {
+    "s_eb774045fc6449": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a012ed-0c1b-7c40-9478-ca5dd94206e1",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "kunpeng2.zhang <kunpeng2.zhang@ly.com>"
+    }
+  }
+}
