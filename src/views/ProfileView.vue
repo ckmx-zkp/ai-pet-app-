@@ -6,7 +6,7 @@ import { useAuthStore } from '../stores/auth'
 import { useDeviceStore } from '../stores/devices'
 import { API_BASE } from '../api/http'
 import http from '../api/http'
-import type { ExportBundle } from '../api/types'
+import type { AnalysisResult, ExportBundle, FunQuizListItem } from '../api/types'
 
 // P8 我的：账号 + 当前设备数据导出（E8 同步 JSON）+ 退出
 const router = useRouter()
@@ -16,7 +16,44 @@ const loadError = ref('')
 const exporting = ref(false)
 const exportError = ref('')
 const bundle = ref<ExportBundle | null>(null)
+const dailySummary = ref<AnalysisResult | null>(null)
+const quizzes = ref<FunQuizListItem[]>([])
+const contentLoading = ref(false)
+const contentError = ref('')
 const activeDevice = computed(() => devices.activeDevice)
+
+function textValue(payload: Record<string, unknown>, key: string) {
+  const value = payload[key]
+  return typeof value === 'string' && value.trim() ? value : ''
+}
+
+function isEmptySummary(summary: AnalysisResult) {
+  return summary.payload.empty === true || !textValue(summary.payload, 'summary')
+}
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleString('zh-CN', { hour12: false })
+}
+
+async function loadMyContent() {
+  contentLoading.value = true
+  contentError.value = ''
+  try {
+    const quizRequest = http.get<FunQuizListItem[]>('/tests')
+    const summaryRequest = activeDevice.value
+      ? http.get<AnalysisResult[]>(`/devices/${activeDevice.value.id}/analyses`, {
+          params: { kind: 'daily_summary', limit: 1, offset: 0 }
+        })
+      : Promise.resolve({ data: [] as AnalysisResult[] })
+    const [quizResponse, summaryResponse] = await Promise.all([quizRequest, summaryRequest])
+    quizzes.value = quizResponse.data
+    dailySummary.value = summaryResponse.data[0] ?? null
+  } catch {
+    contentError.value = '加载小记或问卷失败，请稍后刷新'
+  } finally {
+    contentLoading.value = false
+  }
+}
 
 const exportSummary = computed(() => {
   if (!bundle.value) return null
@@ -37,6 +74,7 @@ onMounted(async () => {
   try {
     await auth.fetchMe()
     if (!devices.devices.length) await devices.fetchDevices()
+    await loadMyContent()
   } catch {
     loadError.value = '获取用户信息失败（401 会自动回登录页）'
   }
@@ -91,6 +129,35 @@ function downloadBundle() {
         <p class="muted">用户 ID：{{ auth.user.id }}</p>
       </template>
       <p v-else class="muted">{{ loadError || '加载中…' }}</p>
+    </div>
+
+    <RouterLink class="card daily-card" :to="{ name: 'daily' }">
+      <div class="card-heading">
+        <h2 class="section-title">今天的小记</h2>
+        <span class="card-link">查看全部</span>
+      </div>
+      <p v-if="contentLoading" class="muted">正在读取服务端小结…</p>
+      <p v-else-if="!activeDevice" class="muted">请先在首页选择设备，再查看小记。</p>
+      <template v-else-if="dailySummary && !isEmptySummary(dailySummary)">
+        <p class="daily-summary">{{ textValue(dailySummary.payload, 'summary') }}</p>
+        <time class="muted">{{ formatDate(dailySummary.created_at) }}</time>
+      </template>
+      <p v-else class="muted">会话结束后，服务端会在这里写下小结。</p>
+    </RouterLink>
+
+    <div class="card questionnaire-card">
+      <div class="card-heading">
+        <h2 class="section-title">问卷与测试</h2>
+        <RouterLink class="card-link" :to="{ name: 'tests' }">查看全部</RouterLink>
+      </div>
+      <RouterLink class="questionnaire-item" :to="{ name: 'owner', query: { section: 'questionnaire' } }">
+        <span><strong>用户性格测试</strong><small>了解主人自己的性格</small></span><b>去填写</b>
+      </RouterLink>
+      <RouterLink v-for="quiz in quizzes" :key="quiz.id" class="questionnaire-item" :to="{ name: 'tests' }">
+        <span><strong>{{ quiz.title }}</strong><small>{{ quiz.subtitle || `${quiz.question_count} 道题` }}</small></span><b>去测试</b>
+      </RouterLink>
+      <p v-if="!contentLoading && !quizzes.length" class="muted">服务端暂时没有可用的趣味测试。</p>
+      <p v-if="contentError" class="error-msg">{{ contentError }}</p>
     </div>
 
     <div class="card export-card">
@@ -156,5 +223,69 @@ function downloadBundle() {
 .logout-btn {
   color: #d63031;
   border-color: #d63031;
+}
+
+.daily-card {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-heading .section-title {
+  margin: 0;
+}
+
+.card-link {
+  color: var(--color-primary);
+  font-size: 13px;
+  text-decoration: none;
+}
+
+.daily-summary {
+  margin-top: 12px !important;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.questionnaire-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.questionnaire-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 10px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.questionnaire-item span {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.questionnaire-item small {
+  color: var(--color-text-dim);
+  line-height: 1.4;
+}
+
+.questionnaire-item b {
+  flex: none;
+  color: var(--color-primary);
+  font-size: 13px;
 }
 </style>
