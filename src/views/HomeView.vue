@@ -26,11 +26,15 @@ const zodiacLabels: Record<string, string> = {
 
 const personaSummary = computed(() => {
   if (!persona.value) return null
+  const identity = persona.value.dossier?.identity?.trim() || ''
+  const relationship = persona.value.dossier?.relationship?.trim() || ''
   return {
     sunSign: persona.value.sun_sign ? (zodiacLabels[persona.value.sun_sign] ?? persona.value.sun_sign) : '未设置星座',
     mbti: persona.value.mbti || '未设置 MBTI',
     kbVersion: persona.value.kb_version === null ? '未关联' : `v${persona.value.kb_version}`,
-    followLatest: persona.value.follow_latest ? '跟随最新知识库' : '已钉扎当前版本'
+    followLatest: persona.value.follow_latest ? '跟随最新知识库' : '已钉扎当前版本',
+    identity,
+    relationship
   }
 })
 
@@ -156,13 +160,15 @@ onMounted(loadDevices)
     <section v-if="activeDevice" class="card persona-summary" aria-label="当前设备人设摘要">
       <div class="section-heading">
         <h2>我的星仔</h2>
-        <RouterLink :to="{ name: 'persona', query: { deviceId: activeDevice.id } }">设置人设</RouterLink>
+        <RouterLink :to="{ name: 'star' }">编辑档案</RouterLink>
       </div>
       <template v-if="personaLoading">
         <p class="muted">正在加载人设摘要…</p>
       </template>
       <template v-else-if="personaSummary">
         <p><strong>{{ personaSummary.sunSign }}</strong> · <strong>{{ personaSummary.mbti }}</strong></p>
+        <p v-if="personaSummary.identity">{{ personaSummary.identity }}</p>
+        <p v-if="personaSummary.relationship" class="muted">{{ personaSummary.relationship }}</p>
         <p class="muted">知识库：{{ personaSummary.kbVersion }} · {{ personaSummary.followLatest }}</p>
       </template>
       <template v-else>
@@ -216,7 +222,11 @@ onMounted(loadDevices)
       >
         {{ activeDevice ? '设置人设' : '先绑定设备' }}
       </RouterLink>
+      <RouterLink class="btn-ghost entry" :to="activeDevice ? { name: 'star' } : { name: 'bind' }">
+        我的星仔
+      </RouterLink>
       <RouterLink class="btn-ghost entry" :to="{ name: 'daily' }">日运/小记</RouterLink>
+      <RouterLink class="btn-ghost entry" :to="{ name: 'tests' }">测试/星盘</RouterLink>
       <RouterLink class="btn-ghost entry" :to="{ name: 'peripheral' }">外设状态</RouterLink>
     </div>
   </div>

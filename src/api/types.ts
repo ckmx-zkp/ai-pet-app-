@@ -36,6 +36,16 @@ export interface TokenResponse {
   token_type: 'bearer'
 }
 
+/** 稳定角色档案（persona.dossier，六字段全部对用户可见可编辑） */
+export interface PersonaDossier {
+  identity: string
+  background: string[]
+  roles: string[]
+  goals: string[]
+  evolution_rules: string[]
+  relationship: string
+}
+
 /** 人设读写响应（GET/PUT /devices/{id}/persona） */
 export interface PersonaProfile {
   device_id: number
@@ -44,14 +54,68 @@ export interface PersonaProfile {
   overrides: Record<string, unknown>
   follow_latest: boolean
   kb_version: number | null
+  dossier?: PersonaDossier
 }
 
-/** 人设保存请求 */
+/** 人设保存请求。PUT 整对象覆盖，必须回传 overrides 其余键与 dossier。 */
 export interface PersonaPayload {
   sun_sign: string
   mbti: string
-  overrides: { taboo: string[] }
+  overrides: Record<string, unknown>
   follow_latest: boolean
+  dossier: PersonaDossier
+}
+
+/** GET /devices/{id}/persona/questionnaire 题面（不含计分键） */
+export interface QuestionnaireQuestion {
+  id: string
+  dimension: string
+  prompt: string
+  a: string
+  b: string
+}
+
+export interface QuestionnaireOut {
+  answers_required: number
+  questions: QuestionnaireQuestion[]
+}
+
+/** POST /devices/{id}/export 同步 JSON 包 */
+export interface ExportBundle {
+  exported_at: string
+  device: { id: number; name: string | null; device_uid_redacted: boolean }
+  persona: {
+    sun_sign: string | null
+    mbti: string | null
+    follow_latest: boolean
+    kb_version: number | null
+    overrides?: Record<string, unknown>
+  } | null
+  bazi_recorded: boolean
+  memories: Array<{
+    id: number
+    title: string | null
+    content: string
+    status: string
+    tags: string[]
+  }>
+  messages: Array<{
+    id: number
+    role: string
+    content_redacted: string
+    created_at: string | null
+  }>
+  analyses: Array<{
+    id: number
+    kind: string
+    payload: Record<string, unknown>
+    created_at: string | null
+  }>
+  daily_contents: Array<{
+    date: string
+    kind: string
+    payload: Record<string, unknown>
+  }>
 }
 
 /** 脱敏后的历史消息（GET /devices/{id}/messages） */
@@ -71,6 +135,58 @@ export interface PeripheralState {
   eye_closed: boolean | null
   extra: Record<string, unknown>
   updated_at: string
+}
+
+export interface FunQuizListItem {
+  id: number
+  kind: string
+  title: string
+  subtitle: string
+  source: string
+  question_count: number
+  quiz_date: string | null
+}
+
+export interface FunQuizDetail extends FunQuizListItem {
+  questions: { id: string; prompt: string; options: { key: string; text: string }[] }[]
+}
+
+export interface ShareCard {
+  title: string
+  result: string
+  summary: string
+  tags: string[]
+  footer: string
+  theme: string
+  save_hint: string
+}
+
+export interface QuizAttempt {
+  id: number
+  quiz_id: number
+  quiz_title: string
+  kind: string
+  result: { title: string; summary: string; share_line?: string }
+  share_card: ShareCard
+}
+
+export interface NatalBody {
+  body: string
+  sign: string
+  sign_zh: string
+  degree_in_sign: number
+  blurb: string
+}
+
+export interface NatalChart {
+  device_id: number
+  has_time: boolean
+  has_place: boolean
+  has_rising: boolean
+  headline: string
+  bodies: Record<string, NatalBody>
+  ascendant: NatalBody | null
+  share_card: ShareCard
 }
 
 /** 用户可管理的设备记忆（GET /devices/{id}/memories） */

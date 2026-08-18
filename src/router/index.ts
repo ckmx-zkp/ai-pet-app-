@@ -10,6 +10,8 @@ import HistoryView from '../views/HistoryView.vue'
 import DailyView from '../views/DailyView.vue'
 import PeripheralView from '../views/PeripheralView.vue'
 import ProfileView from '../views/ProfileView.vue'
+import TestsView from '../views/TestsView.vue'
+import StarPetView from '../views/StarPetView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -22,11 +24,13 @@ const router = createRouter({
         { path: '', name: 'home', component: HomeView },
         { path: 'bind', name: 'bind', component: BindView },
         { path: 'persona', name: 'persona', component: PersonaView },
+        { path: 'star', name: 'star', component: StarPetView },
         { path: 'memories', name: 'memories', component: MemoriesView },
         { path: 'history', name: 'history', component: HistoryView },
         { path: 'daily', name: 'daily', component: DailyView },
         { path: 'peripheral', name: 'peripheral', component: PeripheralView },
-        { path: 'profile', name: 'profile', component: ProfileView }
+        { path: 'profile', name: 'profile', component: ProfileView },
+        { path: 'tests', name: 'tests', component: TestsView }
       ]
     }
   ]
