@@ -8,7 +8,7 @@
 
 AI Pet 的**用户端客户端**（手机 PWA + 桌面）：注册登录、绑设备/配网引导、人设（星座×MBTI）、历史与记忆管理、日运/小记、外设状态只读。只调 `ai-pet-backend` 的公开用户 API；**不直连设备 MQTT/语音，不做运营功能**（那是 ai-pet-admin）。
 
-## 当前状态：Epic A + B1 + B2 + C1 + C2 + C3 + C4 + D1 + D2 + D5 + D6 + D7 已完成（2026-08-18）
+## 当前状态：Epic A + B1 + B2 + C1 + C2 + C3 + C4 + D1 + D2 + D5 + D6 + D7 已完成并部署（2026-08-18）
 
 Vue 3 + Vite + TS(strict) + Pinia + vue-router + axios + vite-plugin-pwa 已落地；
 P0–P8 页面线框与路由全部挂通，B1 登录/注册已对接真实后端。C4 首页已展示当前设备的人设摘要（星座、MBTI、知识库版本与跟随策略，404 为空态）。B2.1 已按 backend E1.1
@@ -47,7 +47,7 @@ D7 已接入 E10 `GET/PUT /devices/{id}/bazi`（人设页内「主人八字」�
 
 ## 开工前提
 
-开发前确认 backend 用户 API 的**已部署**状态（看总看板“集成点状态”与 backend 进度摘要，不能只看本地代码）；auth、E1.1 devices、E2 persona、E4 messages、memories、analyses、peripheral 已部署。`/devices/{id}/export` 与 persona questionnaire 仍为 501；E2 的 12 星座与 16 MBTI 种子已发布。
+开发前确认 backend 用户 API 的**已部署**状态（看总看板“集成点状态”与 backend 进度摘要，不能只看本地代码）；auth、E1.1 devices、E2 persona、E4 messages、memories、analyses、peripheral、E10 fortune/bazi 已部署。`/devices/{id}/export` 与 persona questionnaire 仍为 501；E2 的 12 星座与 16 MBTI 种子已发布。另：人设生效「第四态」经核实后端无 status 字段（见 docs/06 暂不具备实现条件），A3 类需求需 backend 先补字段。
 
 ## 约定（来自 README，AI 会话必须遵守）
 
