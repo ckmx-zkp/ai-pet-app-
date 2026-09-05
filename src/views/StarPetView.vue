@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import RelationshipForm from '../components/RelationshipForm.vue'
 import axios from 'axios'
 import http from '../api/http'
 import { buildPersonaPayload, linesToList, listToLines, normalizeDossier } from '../api/persona'
@@ -21,6 +22,7 @@ const saving = ref(false)
 const noPersona = ref(false)
 const errorMsg = ref('')
 const savedTip = ref('')
+let loadVersion = 0
 
 function applyDossier(profile: PersonaProfile) {
   const dossier = normalizeDossier(profile.dossier)
@@ -44,18 +46,22 @@ function currentDossier(): PersonaDossier {
 }
 
 async function load() {
-  if (!deviceId.value) return
+  const version = ++loadVersion
   loading.value = true
+  loaded.value = null
   errorMsg.value = ''
   noPersona.value = false
   savedTip.value = ''
   try {
     if (!devices.devices.length) await devices.fetchDevices()
+    if (version !== loadVersion) return
     if (!deviceId.value) return
     const { data } = await http.get<PersonaProfile>(`/devices/${deviceId.value}/persona`)
+    if (version !== loadVersion) return
     loaded.value = data
     applyDossier(data)
   } catch (error) {
+    if (version !== loadVersion) return
     loaded.value = null
     identity.value = ''
     background.value = ''
@@ -69,7 +75,7 @@ async function load() {
     }
     errorMsg.value = '加载角色档案失败，请稍后重试'
   } finally {
-    loading.value = false
+    if (version === loadVersion) loading.value = false
   }
 }
 
@@ -80,6 +86,7 @@ async function save() {
     return
   }
   saving.value = true
+  const savingDevice = deviceId.value
   errorMsg.value = ''
   savedTip.value = ''
   const payload = buildPersonaPayload(loaded.value, {
@@ -90,10 +97,12 @@ async function save() {
   })
   try {
     const { data } = await http.put<PersonaProfile>(`/devices/${deviceId.value}/persona`, payload)
+    if (savingDevice !== deviceId.value) return
     loaded.value = data
     applyDossier(data)
     savedTip.value = '已保存，下次和宠物说话时生效'
   } catch (error) {
+    if (savingDevice !== deviceId.value) return
     if (axios.isAxiosError(error) && error.response?.status === 422) {
       errorMsg.value = '档案内容超出限制（身份 1200 字、关系 600 字、列表各 8 条），请缩短后重试'
     } else {
@@ -105,6 +114,7 @@ async function save() {
 }
 
 onMounted(load)
+watch(deviceId, load)
 </script>
 
 <template>
@@ -120,7 +130,8 @@ onMounted(load)
         还没有设置宠物性格，请先选择星座和 MBTI，再来填写角色档案。
         <RouterLink class="empty-link" :to="{ name: 'persona', query: { deviceId } }">去设置宠物性格</RouterLink>
       </div>
-      <template v-else>
+      <template v-else-if="loaded">
+        <RelationshipForm :key="deviceId" :device-id="deviceId" />
         <p class="muted">六项都会进入下次对话的人设。身份与关系是整段文字；其余每行一条，最多 8 条。</p>
         <div class="card field">
           <h2 class="section-title">身份</h2>
@@ -152,6 +163,7 @@ onMounted(load)
         </button>
         <p v-if="savedTip" class="muted save-tip">{{ savedTip }}</p>
       </template>
+      <p v-if="errorMsg && !loaded" class="error-msg" role="alert">{{ errorMsg }}</p>
     </template>
   </div>
 </template>

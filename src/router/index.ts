@@ -1,19 +1,19 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { TOKEN_KEY } from '../api/http'
 import AppShell from '../layouts/AppShell.vue'
-import LoginView from '../views/LoginView.vue'
-import HomeView from '../views/HomeView.vue'
-import BindView from '../views/BindView.vue'
-import PersonaView from '../views/PersonaView.vue'
-import MemoriesView from '../views/MemoriesView.vue'
-import HistoryView from '../views/HistoryView.vue'
-import DailyView from '../views/DailyView.vue'
-import PeripheralView from '../views/PeripheralView.vue'
-import ProfileView from '../views/ProfileView.vue'
-import TestsView from '../views/TestsView.vue'
-import TestResultView from '../views/TestResultView.vue'
-import StarPetView from '../views/StarPetView.vue'
-import OwnerView from '../views/OwnerView.vue'
+const LoginView = () => import('../views/LoginView.vue')
+const HomeView = () => import('../views/HomeView.vue')
+const BindView = () => import('../views/BindView.vue')
+const PersonaView = () => import('../views/PersonaView.vue')
+const MemoriesView = () => import('../views/MemoriesView.vue')
+const HistoryView = () => import('../views/HistoryView.vue')
+const DailyView = () => import('../views/DailyView.vue')
+const PeripheralView = () => import('../views/PeripheralView.vue')
+const ProfileView = () => import('../views/ProfileView.vue')
+const TestsView = () => import('../views/TestsView.vue')
+const TestResultView = () => import('../views/TestResultView.vue')
+const StarPetView = () => import('../views/StarPetView.vue')
+const OwnerView = () => import('../views/OwnerView.vue')
 
 const router = createRouter({
   history: createWebHistory(),
