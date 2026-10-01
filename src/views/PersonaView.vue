@@ -224,7 +224,8 @@ onMounted(loadPage)
           :class="{ active: zodiac === z.key }"
           @click="zodiac = z.key"
         >
-          {{ z.label }}
+          <img :src="`/zodiac/${z.key}.jpg`" class="zodiac-thumb" :alt="z.label" />
+          <span class="zodiac-label">{{ z.label }}</span>
         </button>
       </div>
     </div>
@@ -324,10 +325,41 @@ onMounted(loadPage)
 .zodiac-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  gap: 10px;
 }
 
-.zodiac-item,
+.zodiac-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  border: 1.5px solid var(--color-border);
+  background: #fff;
+  border-radius: 14px;
+  padding: 8px 4px 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.zodiac-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 2px 6px rgba(108, 92, 231, 0.12);
+  transition: transform 0.2s ease;
+}
+
+.zodiac-item:hover .zodiac-thumb {
+  transform: scale(1.05);
+}
+
+.zodiac-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
 .mbti-item {
   border: 1px solid var(--color-border);
   background: #fff;
@@ -344,6 +376,7 @@ onMounted(loadPage)
   background: var(--color-primary-light);
   color: var(--color-primary);
   font-weight: 600;
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.18);
 }
 
 .mbti-row {

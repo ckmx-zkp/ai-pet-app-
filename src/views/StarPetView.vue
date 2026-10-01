@@ -24,6 +24,12 @@ const errorMsg = ref('')
 const savedTip = ref('')
 let loadVersion = 0
 
+const zodiacLabels: Record<string, string> = {
+  aries: '白羊座', taurus: '金牛座', gemini: '双子座', cancer: '巨蟹座',
+  leo: '狮子座', virgo: '处女座', libra: '天秤座', scorpio: '天蝎座',
+  sagittarius: '射手座', capricorn: '摩羯座', aquarius: '水瓶座', pisces: '双鱼座'
+}
+
 function applyDossier(profile: PersonaProfile) {
   const dossier = normalizeDossier(profile.dossier)
   identity.value = dossier.identity
@@ -131,6 +137,20 @@ watch(deviceId, load)
         <RouterLink class="empty-link" :to="{ name: 'persona', query: { deviceId } }">去设置宠物性格</RouterLink>
       </div>
       <template v-else-if="loaded">
+        <div class="card star-pet-badge-card">
+          <img
+            v-if="loaded.sun_sign"
+            :src="`/zodiac/${loaded.sun_sign}.jpg`"
+            class="star-badge-avatar"
+            :alt="loaded.sun_sign"
+          />
+          <div class="star-badge-info">
+            <span class="badge-title">
+              {{ loaded.sun_sign ? zodiacLabels[loaded.sun_sign] || loaded.sun_sign : '未定星座' }} · {{ loaded.mbti || 'MBTI 待测' }}
+            </span>
+            <span class="muted font-12">当前星仔专属档案设定</span>
+          </div>
+        </div>
         <RelationshipForm :key="deviceId" :device-id="deviceId" />
         <p class="muted">六项都会进入下次对话的人设。身份与关系是整段文字；其余每行一条，最多 8 条。</p>
         <div class="card field">
@@ -208,4 +228,35 @@ watch(deviceId, load)
 .save-tip {
   text-align: center;
 }
+
+.star-pet-badge-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, #ffffff 0%, #f5f3ff 100%);
+  border: 1px solid rgba(108, 92, 231, 0.25);
+}
+.star-badge-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
+  border: 2px solid #fff;
+}
+.star-badge-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.badge-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.font-12 {
+  font-size: 12px;
+}
+
 </style>

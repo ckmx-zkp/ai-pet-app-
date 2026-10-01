@@ -168,11 +168,17 @@ onMounted(loadDevices)
         <div class="bubble-arrow"></div>
       </div>
 
-      <!-- 动态拟态宠物形象 -->
+      <!-- 动态拟态宠物形象 / 专属星座萌宠图 -->
       <div class="pet-visual-wrap">
         <div class="pet-glow-ring"></div>
-        <div class="pet-avatar-svg">
-          <!-- 萌宠表情 SVG -->
+        <img
+          v-if="persona?.sun_sign"
+          :src="`/zodiac/${persona.sun_sign}.jpg`"
+          :alt="personaSummary?.sunSign"
+          class="pet-zodiac-img"
+        />
+        <div v-else class="pet-avatar-svg">
+          <!-- 默认萌宠表情 SVG -->
           <svg viewBox="0 0 120 120" width="108" height="108">
             <defs>
               <linearGradient id="petGrad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -184,24 +190,19 @@ onMounted(loadDevices)
                 <stop offset="100%" stop-color="#fd79a8" />
               </linearGradient>
             </defs>
-            <!-- 耳朵 -->
             <polygon points="28,45 15,15 48,28" fill="url(#petGrad)" rx="4" />
             <polygon points="28,40 18,20 44,30" fill="url(#earGrad)" opacity="0.6" />
             <polygon points="92,45 105,15 72,28" fill="url(#petGrad)" rx="4" />
             <polygon points="92,40 102,20 76,30" fill="url(#earGrad)" opacity="0.6" />
-            <!-- 身体/脸部 -->
             <rect x="20" y="24" width="80" height="72" rx="36" fill="url(#petGrad)" />
-            <!-- 腮红 -->
             <circle cx="34" cy="68" r="8" fill="#ff7675" opacity="0.4" />
             <circle cx="86" cy="68" r="8" fill="#ff7675" opacity="0.4" />
-            <!-- 灵动双眼 (眨眼动画) -->
             <g class="eyes-anim">
               <ellipse cx="44" cy="58" rx="6" ry="8" fill="#2d2a4a" />
               <circle cx="46" cy="55" r="2.5" fill="#ffffff" />
               <ellipse cx="76" cy="58" rx="6" ry="8" fill="#2d2a4a" />
               <circle cx="78" cy="55" r="2.5" fill="#ffffff" />
             </g>
-            <!-- 嘴巴与小鼻子 -->
             <polygon points="58,66 62,66 60,69" fill="#2d2a4a" />
             <path d="M54,72 Q60,76 66,72" fill="none" stroke="#2d2a4a" stroke-width="2" stroke-linecap="round" />
           </svg>
@@ -455,6 +456,18 @@ onMounted(loadDevices)
 .pet-avatar-svg {
   position: relative;
   z-index: 1;
+  animation: pet-breathe 4s ease-in-out infinite;
+}
+
+.pet-zodiac-img {
+  width: 108px;
+  height: 108px;
+  border-radius: 24px;
+  object-fit: cover;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 8px 24px rgba(108, 92, 231, 0.28);
+  border: 2px solid rgba(255, 255, 255, 0.95);
   animation: pet-breathe 4s ease-in-out infinite;
 }
 
