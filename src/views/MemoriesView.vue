@@ -221,5 +221,193 @@ onMounted(() => load())
 </template>
 
 <style scoped>
-.page-heading,.toolbar,.memory-header,.actions{display:flex;align-items:center;gap:10px}.page-heading,.memory-header{justify-content:space-between}.page-heading .page-title{margin:4px 0}.toolbar{align-items:stretch}.toolbar .input{flex:1}.select{border:1px solid var(--color-border);border-radius:10px;background:#fff;padding:0 8px;color:var(--color-text)}.text-button{border:0;background:none;color:var(--color-primary);cursor:pointer}.create-form{display:flex;flex-direction:column;gap:10px}.create-form textarea{resize:vertical;font-family:inherit}.memory-item,.profile-card{display:flex;flex-direction:column;gap:8px}.memory-item h2,.profile-card h2{margin:0;font-size:16px}.memory-content,.tags{margin:0;white-space:pre-wrap}.tags{display:flex;flex-wrap:wrap;gap:6px}.tags span,.status{font-size:12px;border-radius:99px;padding:3px 8px;background:var(--color-primary-light);color:var(--color-primary)}.status.candidate{background:#fff5d6;color:#9a6800}.actions{justify-content:flex-end}.btn-danger{border:1px solid #d63031;background:#fff;color:#d63031;border-radius:10px;padding:8px 12px;cursor:pointer}.error-msg{margin:0;color:#d63031;font-size:13px}.empty{min-height:180px}.load-more{align-self:center}.remembered-list{display:flex;flex-direction:column;gap:8px}.remembered-item p{margin:4px 0 0}
+.page-heading, .toolbar, .memory-header, .actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.page-heading, .memory-header {
+  justify-content: space-between;
+}
+
+.page-heading .page-title {
+  margin: 4px 0;
+  font-size: 22px;
+}
+
+.text-button {
+  border: 0;
+  background: none;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.toolbar {
+  align-items: stretch;
+  gap: 10px;
+}
+
+.toolbar .input {
+  flex: 1;
+}
+
+.select {
+  border: 1.5px solid var(--color-border);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0 12px;
+  color: var(--color-text);
+  font-size: 14px;
+  outline: none;
+}
+
+.create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--color-primary);
+  background: #ffffff;
+}
+
+.create-form textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.profile-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f6f4fe 100%);
+  border: 1px solid rgba(108, 92, 231, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-card h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.memory-item {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  background: #ffffff;
+  border-radius: var(--radius-card);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.memory-item:hover {
+  transform: translateY(-2px);
+}
+
+.memory-item h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.memory-content {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-size: 14px;
+  color: var(--color-text);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.tags span {
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.status {
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  padding: 4px 10px;
+  background: rgba(0, 184, 148, 0.12);
+  color: #008768;
+}
+
+.status.candidate {
+  background: #fff8e6;
+  color: #b7791f;
+}
+
+.status.archived, .status.rejected {
+  background: #f1f2f6;
+  color: var(--color-text-dim);
+}
+
+.actions {
+  justify-content: flex-end;
+  padding-top: 6px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.btn-danger {
+  border: 1px solid #ff7675;
+  background: #fff;
+  color: #d63031;
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+  background: #fff0f0;
+}
+
+.error-msg {
+  margin: 0;
+  color: #d63031;
+  font-size: 13px;
+}
+
+.empty {
+  min-height: 160px;
+}
+
+.load-more {
+  align-self: center;
+  margin-top: 8px;
+}
+
+.remembered-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.remembered-item {
+  padding: 8px 12px;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid var(--color-border);
+}
+
+.remembered-item p {
+  margin: 4px 0 0;
+}
 </style>
